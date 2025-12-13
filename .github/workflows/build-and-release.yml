@@ -30,7 +30,7 @@ jobs:
       - name: Stocker le binaire pour la Release
         uses: actions/upload-artifact@v4
         with:
-          name: aeg
+          name: aed
           path: bin
 
   release:
@@ -41,15 +41,15 @@ jobs:
       - name: Télécharger le binaire
         uses: actions/download-artifact@v4
         with:
-          name: aeg
+          name: aed
           path: bin
 
       - name: Créer la Release GitHub
         uses: softprops/action-gh-release@v2
         with:
-          name: aeg_${{ github.ref_name }}
+          name: aed_${{ github.ref_name }}
           tag_name: ${{ github.ref }}
-          files: bin/aeg
+          files: bin/aed
           body: |
             Nouvelle version compilée automatiquement
         env:
