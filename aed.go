@@ -16,11 +16,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// --- TYPES ---
-
 type BackMsg struct{}
 
-// Struct pour identifier un fichier de manière unique sur tout le système
 type fileID struct {
 	dev uint64
 	ino uint64
@@ -48,8 +45,6 @@ type scanFinishedMsg struct {
 	err  error
 }
 
-// --- STYLES ---
-
 var (
 	titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF2A6D")).Bold(true)
 	pathStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true)
@@ -62,8 +57,6 @@ var (
 
 	countStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true).PaddingLeft(2)
 )
-
-// --- MODEL ---
 
 type Model struct {
 	state     SessionState
@@ -109,7 +102,6 @@ func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-// Helper pour générer la liste d'affichage avec "." et ".."
 func (m Model) getDisplayItems() []*FileNode {
 	var items []*FileNode
 
@@ -117,7 +109,6 @@ func (m Model) getDisplayItems() []*FileNode {
 		return items
 	}
 
-	// 1. Ajout de "."
 	dot := &FileNode{
 		Name:  ".",
 		Path:  m.currentNode.Path,
@@ -126,7 +117,6 @@ func (m Model) getDisplayItems() []*FileNode {
 	}
 	items = append(items, dot)
 
-	// 2. Ajout de ".."
 	if m.currentNode.Parent != nil {
 		parentPath := filepath.Dir(m.currentNode.Path)
 		dotdot := &FileNode{
@@ -138,7 +128,6 @@ func (m Model) getDisplayItems() []*FileNode {
 		items = append(items, dotdot)
 	}
 
-	// 3. Ajout des enfants
 	items = append(items, m.currentNode.Children...)
 
 	return items
@@ -149,10 +138,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
-	// --- CORRECTION ICI : Gestion du message de retour pour quitter ---
 	case BackMsg:
 		return m, tea.Quit
-	// ------------------------------------------------------------------
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -163,7 +150,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return BackMsg{} }
 		}
 
-		// ETAT 1 : INPUT
 		if m.state == StateInputPath {
 			switch msg.String() {
 			case "enter":
@@ -187,24 +173,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		// ETAT 2 : SCANNING
 		if m.state == StateScanning {
 			if msg.String() == "q" || msg.String() == "esc" {
 				return m, func() tea.Msg { return BackMsg{} }
 			}
 		}
 
-		// ETAT 3 : BROWSING
 		if m.state == StateBrowsing {
 			items := m.getDisplayItems()
 
 			switch msg.String() {
 
-			// --- QUITTER ---
 			case "q":
 				return m, func() tea.Msg { return BackMsg{} }
 
-			// --- "g": EXPLORER (GUI) ---
 			case "g":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
@@ -213,36 +195,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// --- "s": OPEN SHELL (CLI) ---
 			case "s":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
 
-					// On cible le dossier (si c'est un fichier, on prend le dossier parent)
 					targetPath := selected.Path
 					if !selected.IsDir {
 						targetPath = filepath.Dir(selected.Path)
 					}
 
-					// On récupère le shell de l'utilisateur ($SHELL) ou bash par défaut
 					shell := os.Getenv("SHELL")
 					if shell == "" {
 						shell = "/bin/bash"
 					}
 
-					// On prépare la commande
 					c := exec.Command(shell)
 					c.Dir = targetPath
 
-					// tea.ExecProcess suspend l'UI, lance le shell, et reprend l'UI à la fin
 					return m, tea.ExecProcess(c, func(err error) tea.Msg {
-						// Callback quand le shell est fermé
 						return nil
 					})
 				}
 				return m, nil
 
-			// --- NAVIGATION ---
 			case "backspace", "left", "h", "esc":
 				if m.currentNode.Parent != nil {
 					m.currentNode = m.currentNode.Parent
@@ -407,8 +382,6 @@ func (m Model) View() string {
 	return ""
 }
 
-// --- LOGIQUE METIER ---
-
 func scanDirectoryCmd(path string, counter *int64, visited map[fileID]struct{}) tea.Cmd {
 	return func() tea.Msg {
 		root, err := scanRecursively(path, nil, counter, visited)
@@ -511,9 +484,6 @@ func formatBytes(b int64) string {
 }
 
 func main() {
-	// On lance le programme avec le mode "AltScreen" (plein écran sans scrollback)
-	// On initialise avec une taille par défaut (80x24), elle sera mise à jour
-	// immédiatement par le message WindowSizeMsg de Bubble Tea.
 	p := tea.NewProgram(New(80, 24), tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
