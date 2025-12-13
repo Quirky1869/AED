@@ -30,8 +30,8 @@ jobs:
       - name: Stocker le binaire pour la Release
         uses: actions/upload-artifact@v4
         with:
-          name: aeg-binary
-          path: bin/aeg
+          name: aeg
+          path: bin
 
   release:
     needs: build
@@ -41,7 +41,7 @@ jobs:
       - name: Télécharger le binaire
         uses: actions/download-artifact@v4
         with:
-          name: aeg-binary
+          name: aeg
           path: bin
 
       - name: Créer la Release GitHub
@@ -51,6 +51,6 @@ jobs:
           tag_name: ${{ github.ref }}
           files: bin/aeg
           body: |
-            Nouvelle version compilée automatiquement.
+            Nouvelle version compilée automatiquement
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
