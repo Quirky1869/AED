@@ -15,8 +15,6 @@
 </a>  
 </p>  
 
-![](./_images/Gemini_Generated_Image_588juv588juv588j.png)  
-
 AED (Analyseur d'Espace Disque) est un explorateur de disque interactif pour terminal. Il scanne récursivement un dossier donné pour afficher quels fichiers ou sous-dossiers consomment le plus d'espace.  
 
 ## Fonctionnalités
