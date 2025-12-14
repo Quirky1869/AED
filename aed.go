@@ -46,13 +46,13 @@ type scanFinishedMsg struct {
 }
 
 var (
-	titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF2A6D")).Bold(true)
+	titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00d4")).Bold(true)
 	pathStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true)
 	infoStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff"))
 	helpStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00d4"))
 
 	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("#333333")).Bold(true)
-	barFull       = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF2A6D"))
+	barFull       = lipgloss.NewStyle().Foreground(lipgloss.Color("#9900ff"))
 	barEmpty      = lipgloss.NewStyle().Foreground(lipgloss.Color("#444444"))
 
 	countStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true).PaddingLeft(2)
@@ -373,7 +373,7 @@ func (m Model) View() string {
 		}
 
 		content := strings.Join(rows, "\n")
-		// Ajout de 's' dans le footer
+		
 		footer := helpStyle.Render("\n↑/↓/←/→: naviguer • enter: entrer • g: explorer • s: shell • q: quitter")
 
 		return fmt.Sprintf("\n%s\n%s\n%s", header, content, footer)

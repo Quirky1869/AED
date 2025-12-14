@@ -11,7 +11,7 @@
 ## Résumé
 <p align="center">  
 <a href="https://golang.org" target="_blank" rel="noreferrer">  
-  <img src="./_images/fennec.png" alt="go" width="120" height="70"/>  
+  <img src=""https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg"" alt="go" width="120" height="70"/>  
 </a>  
 </p>   
 
