@@ -1,3 +1,53 @@
 # AED
 
 ![](./_images/aed.jpeg)  
+
+![Static Badge](https://img.shields.io/badge/TUI-AED-gold?style=plastic)  
+![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)  
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=plastic&logo=go)](https://golang.org/)  
+[![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/cyberTools/releases)  
+[![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml)  
+
+## Résumé
+<p align="center">  
+<a href="https://golang.org" target="_blank" rel="noreferrer">  
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" alt="go" width="40" height="40"/>  
+</a>  
+</p>  
+
+![](./_images/Gemini_Generated_Image_588juv588juv588j.png)  
+
+AED (Analyseur d'Espace Disque) est un explorateur de disque interactif pour terminal. Il scanne récursivement un dossier donné pour afficher quels fichiers ou sous-dossiers consomment le plus d'espace.  
+
+## Fonctionnalités
+
+Analyse intelligente : Scan récursif qui trie les éléments par taille et gère les hardlinks (via inodes).  
+
+Visualisation claire : Affiche des barres de progression colorées pour identifier instantanément les éléments volumineux.  
+
+Navigation ergonomique : Compatible avec les flèches directionnelles et les touches Vim (h, j, k, l) pour naviguer dans l'arborescence.  
+
+Actions rapides :
+- s : Ouvre un shell (terminal) directement dans le dossier sélectionné.  
+- g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
+- Interface soignée : Utilise Bubble Tea pour une UI fluide (spinner de chargement, input clignotant, couleurs).  
+
+## Releases
+
+Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici](https://github.com/Quirky1869/aed/releases)  
+
+## Technologies utilisées
+
+| Librairie                                                    | Utilisation                          |
+| ------------------------------------------------------------ | ------------------------------------ |
+| [Bubble Tea](https://github.com/charmbracelet/bubbletea)     | Gestion de l’interface TUI           |
+| [Lipgloss](https://github.com/charmbracelet/lipgloss)        | Stylisation du texte et des bordures |
+| ![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) [Golang](https://go.dev)   | Langage principal et logique métier |
+
+
+## Auteur
+
+Projet développé par Quirky  
+<a href="https://github.com/Quirky1869" target="_blank">  
+  <img src="./_images/white-github.png" alt="GitHub" width="30" height="30" style="vertical-align:middle;"> GitHub  
+</a>  
