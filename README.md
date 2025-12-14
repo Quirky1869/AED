@@ -2,18 +2,18 @@
 
 ![](./_images/aed.jpeg)  
 
-![Static Badge](https://img.shields.io/badge/TUI-AED-gold?style=plastic)  
-![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)  
-[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=plastic&logo=go)](https://golang.org/)  
-[![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/cyberTools/releases)  
-[![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml)  
+![Static Badge](https://img.shields.io/badge/TUI-AED-gold?style=plastic)
+![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=plastic&logo=go)](https://golang.org/)
+[![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/cyberTools/releases)
+[![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml)
 
 ## Résumé
 <p align="center">  
 <a href="https://golang.org" target="_blank" rel="noreferrer">  
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" alt="go" width="40" height="40"/>  
+  <img src="./_images/fennec.png" alt="go" width="120" height="70"/>  
 </a>  
-</p>  
+</p>   
 
 AED (Analyseur d'Espace Disque) est un explorateur de disque interactif pour terminal. Il scanne récursivement un dossier donné pour afficher quels fichiers ou sous-dossiers consomment le plus d'espace.  
 
@@ -33,6 +33,8 @@ Actions rapides :
 ## Releases
 
 Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici](https://github.com/Quirky1869/aed/releases)  
+
+![](./_images/gif/aed.gif)  
 
 ## Technologies utilisées
 
