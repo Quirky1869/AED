@@ -31,8 +31,6 @@ type scanFinishedMsg struct {
 	err      error
 }
 
-// --- ETATS ---
-
 type SessionState int
 
 const (
@@ -41,7 +39,6 @@ const (
 	StateBrowsing
 )
 
-// --- MODES DE TRI ---
 type SortMode int
 
 const (

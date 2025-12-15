@@ -9,7 +9,6 @@ import (
 	"syscall"
 )
 
-// FileID sert de clé unique pour éviter de compter deux fois les hardlinks
 type FileID struct {
 	Dev uint64
 	Ino uint64
