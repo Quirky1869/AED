@@ -16,11 +16,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// --- MESSAGES ---
-
 type BackMsg struct{}
 
-// Message spécifique pour quand on a fini de recalculer (touche 'r')
 type refreshFinishedMsg struct {
 	newNode *FileNode
 	err     error
@@ -31,8 +28,6 @@ type scanFinishedMsg struct {
 	diskSize int64
 	err      error
 }
-
-// --- TYPES ---
 
 type fileID struct {
 	dev uint64
@@ -70,8 +65,6 @@ var (
 
 	countStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true).PaddingLeft(2)
 )
-
-// --- MODEL ---
 
 type Model struct {
 	state     SessionState
