@@ -5,7 +5,7 @@
 ![Static Badge](https://img.shields.io/badge/TUI-AED-gold?style=plastic)
 ![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=plastic&logo=go)](https://golang.org/)
-[![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/cyberTools/releases)
+[![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/aed/releases)
 [![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml)
 
 ## Résumé
