@@ -1,10 +1,9 @@
 package ui
 
-// Language définit tous les textes dynamiques de l'interface
+// Structure contenant tous les textes de l'interface
 type Language struct {
 	Code string
 
-	// Input View
 	Title                string
 	PathLabelActive      string
 	PathLabelInactive    string
@@ -14,28 +13,24 @@ type Language struct {
 	ExcludePlaceholder   string
 	HelpInput            string
 
-	// Scanning View
 	ScanningTitle string
 	FilesScanned  string
 	HelpScanning  string
 
-	// Browsing View
 	ErrorEmpty string
 	TotalLabel string
 	DiskLabel  string
-	SortLabel  string // NOUVEAU : Label "Tri :"
 
-	// NOUVEAU : Noms des modes de tri
+	SortLabel string
 	SortSize  string
 	SortName  string
 	SortCount string
 
-	// Footers
 	HelpFooterShort string
 	HelpFooterFull  string
 }
 
-// Dictionnaire Français
+// Textes en Français
 var fr = Language{
 	Code: "FR",
 
@@ -55,17 +50,17 @@ var fr = Language{
 	ErrorEmpty: "Erreur: Node vide",
 	TotalLabel: "Total",
 	DiskLabel:  "Disque",
-	SortLabel:  "Tri", // NOUVEAU
 
+	SortLabel: "Tri",
 	SortSize:  "Taille",
 	SortName:  "Nom",
 	SortCount: "Éléments",
 
 	HelpFooterShort: "\n ?: aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter",
-	HelpFooterFull: "\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter\n g: explorer • b: shell • r: recalculer • L: langue\n Trier par = s: taille • n: nom • C: éléments",
+	HelpFooterFull:  "\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter\n g: explorer • b: shell • r: recalculer • h: fichiers cachés • L: langue\n Trier par = s: taille • n: nom • C: éléments",
 }
 
-// Dictionnaire Anglais
+// Textes en Anglais
 var en = Language{
 	Code: "EN",
 
@@ -85,12 +80,12 @@ var en = Language{
 	ErrorEmpty: "Error: Empty Node",
 	TotalLabel: "Total",
 	DiskLabel:  "Disk",
-	SortLabel:  "Sort",
 
+	SortLabel: "Sort",
 	SortSize:  "Size",
 	SortName:  "Name",
 	SortCount: "Items",
 
 	HelpFooterShort: "\n ?: help • ↑/↓/←/→: nav • enter: select • q: quit",
-	HelpFooterFull:  "\n ?: less help • ↑/↓/←/→: nav • enter: select • q: quit\n g: explore • b: shell • r: refresh • L: lang\n Sort by = s: size • n: name • C: items",
+	HelpFooterFull:  "\n ?: less help • ↑/↓/←/→: nav • enter: select • q: quit\n g: explore • b: shell • r: refresh • h: hidden files • L: lang\n Sort by = s: size • n: name • C: items",
 }

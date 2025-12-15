@@ -6,14 +6,12 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/charmbracelet/lipgloss"
 	"aed/scanner"
 )
 
-var sortStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("220"))
-
 func (m Model) View() string {
 
+	// Vue 1 : Saisie du chemin et des exclusions
 	if m.state == StateInputPath {
 		title := titleStyle.Render(m.lang.Title)
 		var pathLabel, excludeLabel string
@@ -32,6 +30,7 @@ func (m Model) View() string {
 		)
 	}
 
+	// Vue 2 : Spinner pendant le chargement
 	if m.state == StateScanning {
 		count := atomic.LoadInt64(m.filesScanned)
 		return fmt.Sprintf(
@@ -42,6 +41,7 @@ func (m Model) View() string {
 		)
 	}
 
+	// Vue 3 : Explorateur de fichiers
 	if m.state == StateBrowsing {
 		if m.currentNode == nil {
 			return m.lang.ErrorEmpty
@@ -150,6 +150,7 @@ func (m Model) View() string {
 	return ""
 }
 
+// Récupère les éléments à afficher en filtrant les fichiers cachés si nécessaire
 func (m Model) getDisplayItems() []*scanner.FileNode {
 	var items []*scanner.FileNode
 	if m.currentNode == nil {
@@ -162,10 +163,17 @@ func (m Model) getDisplayItems() []*scanner.FileNode {
 		dotdot := &scanner.FileNode{Name: "..", Path: parentPath, Size: 0, IsDir: true}
 		items = append(items, dotdot)
 	}
-	items = append(items, m.currentNode.Children...)
+
+	for _, child := range m.currentNode.Children {
+		if !m.showHidden && strings.HasPrefix(child.Name, ".") {
+			continue
+		}
+		items = append(items, child)
+	}
 	return items
 }
 
+// Formateur de taille (Bytes -> TiB)
 func formatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {

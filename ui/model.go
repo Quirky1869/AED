@@ -16,8 +16,7 @@ import (
 	"aed/scanner"
 )
 
-// --- MESSAGES ---
-
+// Messages internes pour la gestion asynchrone
 type BackMsg struct{}
 
 type refreshFinishedMsg struct {
@@ -31,6 +30,7 @@ type scanFinishedMsg struct {
 	err      error
 }
 
+// Machine à états de l'interface
 type SessionState int
 
 const (
@@ -39,6 +39,7 @@ const (
 	StateBrowsing
 )
 
+// Modes de tri disponibles
 type SortMode int
 
 const (
@@ -47,8 +48,7 @@ const (
 	SortByCount
 )
 
-// --- MODEL ---
-
+// Modèle principal contenant l'état de l'application
 type Model struct {
 	state        SessionState
 	pathInput    textinput.Model
@@ -67,17 +67,17 @@ type Model struct {
 	diskTotalSize int64
 
 	currentExclusions []string
+	lang              Language
 
-	lang Language
-
-	// Gestion du tri
-	sortMode SortMode
-	sortDesc bool // NOUVEAU : true = Descendant (9-0), false = Ascendant (0-9)
+	sortMode   SortMode
+	sortDesc   bool
+	showHidden bool
 
 	width, height int
 	err           error
 }
 
+// Initialisation du modèle avec les valeurs par défaut
 func New(w, h int) Model {
 	currentLang := fr
 
@@ -110,10 +110,9 @@ func New(w, h int) Model {
 		height:       h,
 		showHelp:     true,
 		lang:         currentLang,
-		
-		// Initialisation du tri
 		sortMode:     SortBySize,
-		sortDesc:     true, // Par défaut on veut voir les gros fichiers en premier
+		sortDesc:     true,
+		showHidden:   true,
 	}
 }
 
@@ -121,7 +120,7 @@ func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-// Fonction de tri mise à jour avec gestion Ascendant/Descendant
+// Applique le tri sur les enfants du dossier courant selon le mode sélectionné
 func (m *Model) applySort() {
 	if m.currentNode == nil || len(m.currentNode.Children) == 0 {
 		return
@@ -131,18 +130,16 @@ func (m *Model) applySort() {
 		a := m.currentNode.Children[i]
 		b := m.currentNode.Children[j]
 
-		// 1. On détermine si A est "plus petit" que B (Logique Ascendante de base)
 		isLess := false
 		switch m.sortMode {
 		case SortByName:
 			isLess = strings.ToLower(a.Name) < strings.ToLower(b.Name)
 		case SortByCount:
 			isLess = len(a.Children) < len(b.Children)
-		default: // Size
+		default:
 			isLess = a.Size < b.Size
 		}
 
-		// 2. Si on est en mode Descendant, on inverse le résultat
 		if m.sortDesc {
 			return !isLess
 		}
@@ -167,6 +164,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return BackMsg{} }
 		}
 
+		// Bascule de la langue (FR/EN)
 		if msg.String() == "l" || msg.String() == "L" || msg.String() == "ctrl+l" {
 			if m.lang.Code == "FR" {
 				m.lang = en
@@ -178,9 +176,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Gestion de la vue de saisie (Input)
 		if m.state == StateInputPath {
 			switch msg.String() {
 
+			// Navigation entre les champs (Tab/Arrow)
 			case "tab", "shift+tab", "up", "down":
 				if m.focusIndex == 0 {
 					m.focusIndex = 1
@@ -193,6 +193,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, textinput.Blink
 
+			// Validation et lancement du scan
 			case "enter":
 				rawInput := m.pathInput.Value()
 				path := rawInput
@@ -234,12 +235,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		// Gestion pendant le scan (Permet d'annuler)
 		if m.state == StateScanning {
 			if msg.String() == "q" || msg.String() == "esc" {
 				return m, func() tea.Msg { return BackMsg{} }
 			}
 		}
 
+		// Gestion de la navigation (Browsing)
 		if m.state == StateBrowsing {
 			items := m.getDisplayItems()
 
@@ -250,38 +253,56 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showHelp = !m.showHelp
 				return m, nil
 
-			// --- GESTION DU TRI MISE À JOUR ---
-			case "s": // Size
+			// Afficher/Masquer les fichiers cachés
+			case "h":
+				m.showHidden = !m.showHidden
+				newItems := m.getDisplayItems()
+				if m.cursor >= len(newItems) {
+					m.cursor = len(newItems) - 1
+					if m.cursor < 0 {
+						m.cursor = 0
+					}
+				}
+				visibleHeight := m.height - 7
+				if visibleHeight > 0 {
+					if m.cursor < m.yOffset {
+						m.yOffset = m.cursor
+					}
+				}
+				return m, nil
+
+			// Options de tri (Taille, Nom, Nombre d'éléments)
+			case "s":
 				if m.sortMode == SortBySize {
-					m.sortDesc = !m.sortDesc // On inverse si même mode
+					m.sortDesc = !m.sortDesc
 				} else {
 					m.sortMode = SortBySize
-					m.sortDesc = true // Défaut Desc pour la taille
+					m.sortDesc = true
 				}
 				m.applySort()
 				return m, nil
 
-			case "n": // Name
+			case "n":
 				if m.sortMode == SortByName {
 					m.sortDesc = !m.sortDesc
 				} else {
 					m.sortMode = SortByName
-					m.sortDesc = false // Défaut Asc pour le nom (A-Z)
+					m.sortDesc = false
 				}
 				m.applySort()
 				return m, nil
 
-			case "C": // Count
+			case "C":
 				if m.sortMode == SortByCount {
 					m.sortDesc = !m.sortDesc
 				} else {
 					m.sortMode = SortByCount
-					m.sortDesc = true // Défaut Desc pour le nombre
+					m.sortDesc = true
 				}
 				m.applySort()
 				return m, nil
-			// ----------------------------------
 
+			// Rafraîchir le dossier courant
 			case "r":
 				if m.currentNode != nil {
 					m.state = StateScanning
@@ -294,7 +315,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			case "backspace", "left", "h", "esc":
+			// Remonter au dossier parent
+			case "backspace", "left", "esc":
 				if m.currentNode.Parent != nil {
 					m.currentNode = m.currentNode.Parent
 					m.cursor = 0
@@ -302,6 +324,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.applySort()
 				}
 
+			// Entrer dans un dossier
 			case "enter", "right", "l":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
@@ -330,6 +353,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
+			// Ouvrir avec l'explorateur de fichiers par défaut (xdg-open)
 			case "g":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
@@ -338,6 +362,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
+			// Ouvrir un shell dans le dossier courant
 			case "b":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
@@ -355,6 +380,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
+			// Navigation verticale (Curseur)
 			case "up", "k":
 				if m.cursor > 0 {
 					m.cursor--
@@ -397,6 +423,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			newNode := msg.newNode
 			oldNode := m.currentNode
 
+			// Mise à jour de l'arbre existant avec les nouvelles données
 			if oldNode.Parent != nil {
 				newNode.Parent = oldNode.Parent
 				newNode.Name = filepath.Base(newNode.Path)
@@ -436,7 +463,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// ... scanDirectoryCmd et refreshDirectoryCmd identiques ...
+// Commande Tea pour lancer le scan complet
 func scanDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
 	return func() tea.Msg {
 		diskSize := scanner.GetPartitionSize(path)
@@ -445,9 +472,10 @@ func scanDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]st
 	}
 }
 
+// Commande Tea pour rafraîchir uniquement un sous-dossier
 func refreshDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
 	return func() tea.Msg {
 		root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
 		return refreshFinishedMsg{newNode: root, err: err}
-	}
+    }
 }
