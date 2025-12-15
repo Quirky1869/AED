@@ -27,8 +27,9 @@ type refreshFinishedMsg struct {
 }
 
 type scanFinishedMsg struct {
-	root *FileNode
-	err  error
+	root     *FileNode
+	diskSize int64
+	err      error
 }
 
 // --- TYPES ---
@@ -82,8 +83,9 @@ type Model struct {
 	cursor      int
 	yOffset     int
 
-	filesScanned *int64
-	showHelp     bool
+	filesScanned  *int64
+	showHelp      bool
+	diskTotalSize int64
 
 	width, height int
 	err           error
@@ -91,7 +93,7 @@ type Model struct {
 
 func New(w, h int) Model {
 	ti := textinput.New()
-	ti.Placeholder = "/home/user"
+	ti.Placeholder = "/home/user (ou ~)"
 	ti.Focus()
 	ti.CharLimit = 256
 	ti.Width = 50
@@ -127,7 +129,6 @@ func (m Model) getDisplayItems() []*FileNode {
 		return items
 	}
 
-	// Ajout du dossier courant "."
 	dot := &FileNode{
 		Name:  ".",
 		Path:  m.currentNode.Path,
@@ -136,13 +137,12 @@ func (m Model) getDisplayItems() []*FileNode {
 	}
 	items = append(items, dot)
 
-	// Ajout du dossier parent ".." si disponible
 	if m.currentNode.Parent != nil {
 		parentPath := filepath.Dir(m.currentNode.Path)
 		dotdot := &FileNode{
 			Name:  "..",
 			Path:  parentPath,
-			Size:  0, // Taille non pertinente pour l'affichage ici
+			Size:  0,
 			IsDir: true,
 		}
 		items = append(items, dotdot)
@@ -176,10 +176,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.state == StateInputPath {
 			switch msg.String() {
 			case "enter":
-				path := m.textInput.Value()
+				rawInput := m.textInput.Value()
+
+				// 1. Gestion du raccourci "."
+				path := rawInput
 				if path == "." {
 					path, _ = os.Getwd()
 				}
+
+				// 2. Gestion du raccourci "~" (NOUVEAU)
+				path = expandPath(path)
 
 				m.state = StateScanning
 				atomic.StoreInt64(m.filesScanned, 0)
@@ -241,22 +247,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// --- FEATURE RECALCULER ('r') MODIFIÉE ---
 			case "r":
 				if m.currentNode != nil {
 					m.state = StateScanning
 					atomic.StoreInt64(m.filesScanned, 0)
 					visitedInodes := make(map[fileID]struct{})
 
-					// On lance un scan spécifique pour le rafraîchissement
-					// On scanne UNIQUEMENT le dossier courant
 					return m, tea.Batch(
 						m.spinner.Tick,
 						refreshDirectoryCmd(m.currentNode.Path, m.filesScanned, visitedInodes),
 					)
 				}
 				return m, nil
-			// -----------------------------------------
 
 			case "backspace", "left", "h", "esc":
 				if m.currentNode.Parent != nil {
@@ -313,7 +315,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	// --- FIN DU SCAN INITIAL ---
 	case scanFinishedMsg:
 		if msg.err != nil {
 			m.err = msg.err
@@ -321,10 +322,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.root = msg.root
 			m.currentNode = msg.root
+			m.diskTotalSize = msg.diskSize
 			m.state = StateBrowsing
 		}
 
-		// --- FIN DU SCAN DE RAFRAÎCHISSEMENT (TOUCHE R) ---
 	case refreshFinishedMsg:
 		if msg.err != nil {
 			m.err = msg.err
@@ -333,17 +334,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			newNode := msg.newNode
 			oldNode := m.currentNode
 
-			// LA GREFFE : On rattache le nouveau node à l'ancien parent
 			if oldNode.Parent != nil {
 				newNode.Parent = oldNode.Parent
-
-				// --- CORRECTION DU NOM ICI ---
-				// Comme le scan a été fait sans parent, le nom est le chemin complet.
-				// Puisqu'on le rattache à un parent, on remet le nom court (Base).
 				newNode.Name = filepath.Base(newNode.Path)
-				// -----------------------------
 
-				// 1. Mise à jour de la liste des enfants du parent
 				for i, child := range oldNode.Parent.Children {
 					if child.Path == oldNode.Path {
 						oldNode.Parent.Children[i] = newNode
@@ -351,7 +345,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
-				// 2. Mise à jour de la taille des parents (Propagation vers le haut)
 				diff := newNode.Size - oldNode.Size
 				parent := newNode.Parent
 				for parent != nil {
@@ -359,7 +352,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					parent = parent.Parent
 				}
 			} else {
-				// Si on est à la racine absolue, on garde le nom complet
 				m.root = newNode
 			}
 
@@ -396,9 +388,10 @@ func (m Model) View() string {
 	if m.state == StateScanning {
 		count := atomic.LoadInt64(m.filesScanned)
 		return fmt.Sprintf(
-			"\n  %s Analyse en cours...\n\n%s fichiers scannés",
+			"\n  %s Analyse en cours...\n\n%s fichiers scannés\n\n  %s",
 			m.spinner.View(),
 			countStyle.Render(fmt.Sprintf("%d", count)),
+			helpStyle.Render("Appuyer sur q pour quitter"),
 		)
 	}
 
@@ -411,7 +404,12 @@ func (m Model) View() string {
 		path := pathStyle.Render(m.currentNode.Path)
 		totalSize := infoStyle.Render(fmt.Sprintf("Total: %s", formatBytes(m.currentNode.Size)))
 
-		header := fmt.Sprintf("  %s  %s  (%s)\n", title, path, totalSize)
+		var diskSizeStr string
+		if m.diskTotalSize > 0 {
+			diskSizeStr = infoStyle.Render(fmt.Sprintf("Disque: %s", formatBytes(m.diskTotalSize)))
+		}
+
+		header := fmt.Sprintf("  %s  %s  (%s)  (%s)\n", title, path, totalSize, diskSizeStr)
 
 		footerHeight := 2
 		if !m.showHelp {
@@ -490,18 +488,16 @@ func (m Model) View() string {
 
 // --- COMMANDES DE SCAN ---
 
-// Commande pour le scan initial
 func scanDirectoryCmd(path string, counter *int64, visited map[fileID]struct{}) tea.Cmd {
 	return func() tea.Msg {
+		diskSize := getPartitionSize(path)
 		root, err := scanRecursively(path, nil, counter, visited)
-		return scanFinishedMsg{root: root, err: err}
+		return scanFinishedMsg{root: root, diskSize: diskSize, err: err}
 	}
 }
 
-// Commande pour le refresh (touche r)
 func refreshDirectoryCmd(path string, counter *int64, visited map[fileID]struct{}) tea.Cmd {
 	return func() tea.Msg {
-		// On passe nil comme parent car on rattachera le node manuellement après
 		root, err := scanRecursively(path, nil, counter, visited)
 		return refreshFinishedMsg{newNode: root, err: err}
 	}
@@ -601,6 +597,32 @@ func formatBytes(b int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+func getPartitionSize(path string) int64 {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(path, &stat); err != nil {
+		return 0
+	}
+	return int64(stat.Blocks) * int64(stat.Bsize)
+}
+
+// --- NOUVELLE FONCTION POUR GERER LE "~" ---
+func expandPath(path string) string {
+	if strings.HasPrefix(path, "~") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return path // En cas d'erreur, on laisse le path tel quel
+		}
+		if path == "~" {
+			return home
+		}
+		// Si c'est "~/Documents" par exemple
+		if len(path) > 1 && path[1] == '/' {
+			return filepath.Join(home, path[2:])
+		}
+	}
+	return path
 }
 
 func main() {
