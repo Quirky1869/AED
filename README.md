@@ -5,7 +5,6 @@
 ![Static Badge](https://img.shields.io/badge/TUI-AED-gold?style=plastic)
 ![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=plastic&logo=go)](https://golang.org/)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Quirky1869/aed?color=e7c47d)](https://goreportcard.com/report/github.com/Quirky1869/aed)
 [![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/aed/releases)
 [![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml)
 
@@ -71,6 +70,7 @@ Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici
 ## Auteur
 
 Projet développé par Quirky  
+
 <a href="https://github.com/Quirky1869" target="_blank">  
   <img src="./_images/white-github.png" alt="GitHub" width="30" height="30" style="vertical-align:middle;"> GitHub  
 </a>  
