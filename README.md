@@ -30,6 +30,22 @@ Actions rapides :
 - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
 - Interface soignée : Utilise Bubble Tea pour une UI fluide (spinner de chargement, input clignotant, couleurs).  
 
+## Structure du projet
+
+```
+.
+├── go.mod
+├── cmd/
+│   └── app/
+│       └── main.go  # Entrée du programme
+├── scanner/
+│   └── scanner.go   # Logique de scan, FileNode, utilitaires
+└── ui/
+    ├── styles.go    # Styles Lipgloss
+    ├── view.go      # Fonction View() et formatage
+    └── model.go     # Structure Model, Update() et Init()
+```
+
 ## Releases
 
 Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici](https://github.com/Quirky1869/aed/releases)  
