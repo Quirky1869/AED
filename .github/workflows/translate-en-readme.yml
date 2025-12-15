@@ -1,0 +1,31 @@
+name: Translate README
+
+on:
+  push:
+    paths:
+      - 'README.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Translate Shell
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y translate-shell
+
+      - name: Translate README to English
+        run: |
+          trans -b fr:en -i README.md -o README-en.md
+
+      - name: Commit and Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: update README-en.md (auto-translated)"
+          file_pattern: 'README-en.md'
