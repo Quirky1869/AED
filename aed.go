@@ -16,7 +16,22 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// --- MESSAGES ---
+
 type BackMsg struct{}
+
+// Message spécifique pour quand on a fini de recalculer (touche 'r')
+type refreshFinishedMsg struct {
+	newNode *FileNode
+	err     error
+}
+
+type scanFinishedMsg struct {
+	root *FileNode
+	err  error
+}
+
+// --- TYPES ---
 
 type fileID struct {
 	dev uint64
@@ -40,10 +55,7 @@ const (
 	StateBrowsing
 )
 
-type scanFinishedMsg struct {
-	root *FileNode
-	err  error
-}
+// --- STYLES ---
 
 var (
 	titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00d4")).Bold(true)
@@ -58,6 +70,8 @@ var (
 	countStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true).PaddingLeft(2)
 )
 
+// --- MODEL ---
+
 type Model struct {
 	state     SessionState
 	textInput textinput.Model
@@ -69,6 +83,7 @@ type Model struct {
 	yOffset     int
 
 	filesScanned *int64
+	showHelp     bool
 
 	width, height int
 	err           error
@@ -95,12 +110,15 @@ func New(w, h int) Model {
 		filesScanned: &zero,
 		width:        w,
 		height:       h,
+		showHelp:     true,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
+
+// --- LOGIQUE D'AFFICHAGE ---
 
 func (m Model) getDisplayItems() []*FileNode {
 	var items []*FileNode
@@ -109,6 +127,7 @@ func (m Model) getDisplayItems() []*FileNode {
 		return items
 	}
 
+	// Ajout du dossier courant "."
 	dot := &FileNode{
 		Name:  ".",
 		Path:  m.currentNode.Path,
@@ -117,12 +136,13 @@ func (m Model) getDisplayItems() []*FileNode {
 	}
 	items = append(items, dot)
 
+	// Ajout du dossier parent ".." si disponible
 	if m.currentNode.Parent != nil {
 		parentPath := filepath.Dir(m.currentNode.Path)
 		dotdot := &FileNode{
 			Name:  "..",
 			Path:  parentPath,
-			Size:  0,
+			Size:  0, // Taille non pertinente pour l'affichage ici
 			IsDir: true,
 		}
 		items = append(items, dotdot)
@@ -132,6 +152,8 @@ func (m Model) getDisplayItems() []*FileNode {
 
 	return items
 }
+
+// --- UPDATE ---
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -150,6 +172,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return BackMsg{} }
 		}
 
+		// --- ETAT: SAISIE DU CHEMIN ---
 		if m.state == StateInputPath {
 			switch msg.String() {
 			case "enter":
@@ -173,12 +196,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		// --- ETAT: SCAN EN COURS ---
 		if m.state == StateScanning {
 			if msg.String() == "q" || msg.String() == "esc" {
 				return m, func() tea.Msg { return BackMsg{} }
 			}
 		}
 
+		// --- ETAT: NAVIGATION ---
 		if m.state == StateBrowsing {
 			items := m.getDisplayItems()
 
@@ -186,6 +211,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case "q":
 				return m, func() tea.Msg { return BackMsg{} }
+
+			case ",", "?":
+				m.showHelp = !m.showHelp
+				return m, nil
 
 			case "g":
 				if len(items) > 0 && m.cursor < len(items) {
@@ -195,28 +224,39 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			case "s":
+			case "b":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
-
 					targetPath := selected.Path
 					if !selected.IsDir {
 						targetPath = filepath.Dir(selected.Path)
 					}
-
 					shell := os.Getenv("SHELL")
 					if shell == "" {
 						shell = "/bin/bash"
 					}
-
 					c := exec.Command(shell)
 					c.Dir = targetPath
-
-					return m, tea.ExecProcess(c, func(err error) tea.Msg {
-						return nil
-					})
+					return m, tea.ExecProcess(c, func(err error) tea.Msg { return nil })
 				}
 				return m, nil
+
+			// --- FEATURE RECALCULER ('r') MODIFIÉE ---
+			case "r":
+				if m.currentNode != nil {
+					m.state = StateScanning
+					atomic.StoreInt64(m.filesScanned, 0)
+					visitedInodes := make(map[fileID]struct{})
+
+					// On lance un scan spécifique pour le rafraîchissement
+					// On scanne UNIQUEMENT le dossier courant
+					return m, tea.Batch(
+						m.spinner.Tick,
+						refreshDirectoryCmd(m.currentNode.Path, m.filesScanned, visitedInodes),
+					)
+				}
+				return m, nil
+			// -----------------------------------------
 
 			case "backspace", "left", "h", "esc":
 				if m.currentNode.Parent != nil {
@@ -261,7 +301,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "down", "j":
 				if m.cursor < len(items)-1 {
 					m.cursor++
-					visibleHeight := m.height - 7
+					footerHeight := 2
+					if !m.showHelp {
+						footerHeight = 0
+					}
+					visibleHeight := m.height - 5 - footerHeight
 					if m.cursor >= m.yOffset+visibleHeight {
 						m.yOffset = m.cursor - visibleHeight + 1
 					}
@@ -269,6 +313,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+	// --- FIN DU SCAN INITIAL ---
 	case scanFinishedMsg:
 		if msg.err != nil {
 			m.err = msg.err
@@ -276,6 +321,55 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.root = msg.root
 			m.currentNode = msg.root
+			m.state = StateBrowsing
+		}
+
+		// --- FIN DU SCAN DE RAFRAÎCHISSEMENT (TOUCHE R) ---
+	case refreshFinishedMsg:
+		if msg.err != nil {
+			m.err = msg.err
+			m.state = StateBrowsing
+		} else {
+			newNode := msg.newNode
+			oldNode := m.currentNode
+
+			// LA GREFFE : On rattache le nouveau node à l'ancien parent
+			if oldNode.Parent != nil {
+				newNode.Parent = oldNode.Parent
+
+				// --- CORRECTION DU NOM ICI ---
+				// Comme le scan a été fait sans parent, le nom est le chemin complet.
+				// Puisqu'on le rattache à un parent, on remet le nom court (Base).
+				newNode.Name = filepath.Base(newNode.Path)
+				// -----------------------------
+
+				// 1. Mise à jour de la liste des enfants du parent
+				for i, child := range oldNode.Parent.Children {
+					if child.Path == oldNode.Path {
+						oldNode.Parent.Children[i] = newNode
+						break
+					}
+				}
+
+				// 2. Mise à jour de la taille des parents (Propagation vers le haut)
+				diff := newNode.Size - oldNode.Size
+				parent := newNode.Parent
+				for parent != nil {
+					parent.Size += diff
+					parent = parent.Parent
+				}
+			} else {
+				// Si on est à la racine absolue, on garde le nom complet
+				m.root = newNode
+			}
+
+			m.currentNode = newNode
+
+			if m.cursor >= len(m.getDisplayItems()) {
+				m.cursor = 0
+				m.yOffset = 0
+			}
+
 			m.state = StateBrowsing
 		}
 
@@ -289,6 +383,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return m, nil
 }
+
+// --- VIEW ---
 
 func (m Model) View() string {
 	if m.state == StateInputPath {
@@ -317,13 +413,18 @@ func (m Model) View() string {
 
 		header := fmt.Sprintf("  %s  %s  (%s)\n", title, path, totalSize)
 
-		var rows []string
-		items := m.getDisplayItems()
+		footerHeight := 2
+		if !m.showHelp {
+			footerHeight = 0
+		}
 
-		visibleHeight := m.height - 7
+		visibleHeight := m.height - 5 - footerHeight
 		if visibleHeight < 1 {
 			visibleHeight = 1
 		}
+
+		var rows []string
+		items := m.getDisplayItems()
 
 		start := m.yOffset
 		end := start + visibleHeight
@@ -373,8 +474,13 @@ func (m Model) View() string {
 		}
 
 		content := strings.Join(rows, "\n")
-		
-		footer := helpStyle.Render("\n↑/↓/←/→: naviguer • enter: entrer • g: explorer • s: shell • q: quitter")
+
+		var footer string
+		if m.showHelp {
+			footer = helpStyle.Render("\n ?: aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter")
+		} else {
+			footer = helpStyle.Render("\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter\n g: explorer • b: shell • r: recalculer")
+		}
 
 		return fmt.Sprintf("\n%s\n%s\n%s", header, content, footer)
 	}
@@ -382,12 +488,26 @@ func (m Model) View() string {
 	return ""
 }
 
+// --- COMMANDES DE SCAN ---
+
+// Commande pour le scan initial
 func scanDirectoryCmd(path string, counter *int64, visited map[fileID]struct{}) tea.Cmd {
 	return func() tea.Msg {
 		root, err := scanRecursively(path, nil, counter, visited)
 		return scanFinishedMsg{root: root, err: err}
 	}
 }
+
+// Commande pour le refresh (touche r)
+func refreshDirectoryCmd(path string, counter *int64, visited map[fileID]struct{}) tea.Cmd {
+	return func() tea.Msg {
+		// On passe nil comme parent car on rattachera le node manuellement après
+		root, err := scanRecursively(path, nil, counter, visited)
+		return refreshFinishedMsg{newNode: root, err: err}
+	}
+}
+
+// --- FONCTION DE SCAN RECURSIVE ---
 
 func scanRecursively(path string, parent *FileNode, counter *int64, visited map[fileID]struct{}) (*FileNode, error) {
 	atomic.AddInt64(counter, 1)
