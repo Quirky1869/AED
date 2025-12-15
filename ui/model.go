@@ -83,7 +83,7 @@ func New(w, h int) Model {
 	// Spinner (Rose #FF2A6D)
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF2A6D"))
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00d4"))
 
 	zero := int64(0)
 
