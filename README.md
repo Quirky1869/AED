@@ -29,11 +29,16 @@ Visualisation claire : Affiche des barres de progression colorées pour identifi
 
 Navigation ergonomique : Compatible avec les flèches directionnelles et les touches Vim (h, j, k, l) pour naviguer dans l'arborescence.  
 
-Actions rapides :
-- s : Ouvre un shell (terminal) directement dans le dossier sélectionné.  
-- g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
-- r : Permet de re-scanner le dossier actuel
-- L : Permet de permuter la langue entre Francais :fr: et Anglais :gb:
+>[!TIP]
+> Options :
+> - b : Ouvre un shell (terminal) directement dans le dossier sélectionné.  
+> - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
+> - r : Permet de re-scanner le dossier actuel
+> - L : Permet de permuter la langue entre Francais :fr: et Anglais :gb:
+> - s : Trier par taille (Ascendant/Descendant)
+> - n : Trier par nom (Ascendant/Descendant)
+> - C : Trier par nombre d'items
+> - h : Afficher ou masquer les fichiers cachés
 
 ## Structure du projet
 
