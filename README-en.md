@@ -29,11 +29,16 @@ Clear visualization: Shows colored progress bars to instantly identify large ite
 
 Ergonomic navigation: Compatible with directional arrows and Vim keys (h, j, k, l) to navigate in the tree.
 
-Quick actions:
-- s: Opens a shell (terminal) directly in the selected folder.
-- g: Opens the folder or file in the OS graphical explorer (xdg-open).
-- r: Allows you to re-scan the current folder
-- L: Allows you to switch the language between French:fr: and English:gb:
+>[!TIP]
+> Options:
+> - b: Opens a shell (terminal) directly in the selected folder.
+> - g: Opens the folder or file in the OS graphical explorer (xdg-open).
+> - r: Allows you to re-scan the current folder
+> - L: Allows you to switch the language between French:fr: and English:gb:
+> - s: Sort by size (Ascending/Descending)
+> - n: Sort by name (Ascending/Descending)
+> - C: Sort by number of items
+> - h: Show or hide hidden files
 
 ## Project structure
 
