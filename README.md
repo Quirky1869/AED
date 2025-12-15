@@ -28,7 +28,7 @@ Navigation ergonomique : Compatible avec les flèches directionnelles et les tou
 Actions rapides :
 - s : Ouvre un shell (terminal) directement dans le dossier sélectionné.  
 - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
-- Interface soignée : Utilise Bubble Tea pour une UI fluide (spinner de chargement, input clignotant, couleurs).  
+- r : Permet de re-scanner le dossier actuel
 
 ## Structure du projet
 

@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -13,6 +14,8 @@ import (
 
 	"aed/scanner"
 )
+
+// --- MESSAGES ---
 
 type BackMsg struct{}
 
@@ -27,7 +30,7 @@ type scanFinishedMsg struct {
 	err      error
 }
 
-// --- TYPES ET CONSTANTES ---
+// --- ETATS ---
 
 type SessionState int
 
@@ -40,9 +43,12 @@ const (
 // --- MODEL ---
 
 type Model struct {
-	state     SessionState
-	textInput textinput.Model
-	spinner   spinner.Model
+	state        SessionState
+	pathInput    textinput.Model
+	excludeInput textinput.Model
+	focusIndex   int // 0: path, 1: exclude
+
+	spinner spinner.Model
 
 	root        *scanner.FileNode
 	currentNode *scanner.FileNode
@@ -53,11 +59,14 @@ type Model struct {
 	showHelp      bool
 	diskTotalSize int64
 
+	currentExclusions []string
+
 	width, height int
 	err           error
 }
 
 func New(w, h int) Model {
+	// Input Path
 	ti := textinput.New()
 	ti.Placeholder = "/home/user (ou ~)"
 	ti.Focus()
@@ -65,6 +74,13 @@ func New(w, h int) Model {
 	ti.Width = 50
 	ti.SetValue(".")
 
+	// Input Exclusions
+	ei := textinput.New()
+	ei.Placeholder = "node_modules, .git, *.tmp"
+	ei.CharLimit = 256
+	ei.Width = 50
+
+	// Spinner (Rose #FF2A6D)
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF2A6D"))
@@ -73,7 +89,9 @@ func New(w, h int) Model {
 
 	return Model{
 		state:        StateInputPath,
-		textInput:    ti,
+		pathInput:    ti,
+		excludeInput: ei,
+		focusIndex:   0,
 		spinner:      s,
 		filesScanned: &zero,
 		width:        w,
@@ -103,17 +121,46 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return BackMsg{} }
 		}
 
+		// --- PAGE D'ACCUEIL (INPUTS) ---
 		if m.state == StateInputPath {
 			switch msg.String() {
+
+			// Navigation entre les champs
+			case "tab", "shift+tab", "up", "down":
+				if m.focusIndex == 0 {
+					m.focusIndex = 1
+					m.pathInput.Blur()
+					m.excludeInput.Focus()
+				} else {
+					m.focusIndex = 0
+					m.excludeInput.Blur()
+					m.pathInput.Focus()
+				}
+				return m, textinput.Blink
+
+			// Validation
 			case "enter":
-				rawInput := m.textInput.Value()
+				// 1. Gestion du chemin principal
+				rawInput := m.pathInput.Value()
 				path := rawInput
 				if path == "." {
 					path, _ = os.Getwd()
 				}
-				
-				// Appel à la fonction utilitaire du package scanner
 				path = scanner.ExpandPath(path)
+
+				// 2. Gestion des exclusions (CORRIGÉE)
+				rawExcludes := m.excludeInput.Value()
+				var exclusions []string
+				if strings.TrimSpace(rawExcludes) != "" {
+					parts := strings.Split(rawExcludes, ",")
+					for _, p := range parts {
+						trimmed := strings.TrimSpace(p)
+						// On applique l'expansion du tilde (~) sur chaque exclusion
+						expanded := scanner.ExpandPath(trimmed)
+						exclusions = append(exclusions, expanded)
+					}
+				}
+				m.currentExclusions = exclusions
 
 				m.state = StateScanning
 				atomic.StoreInt64(m.filesScanned, 0)
@@ -121,58 +168,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				return m, tea.Batch(
 					m.spinner.Tick,
-					scanDirectoryCmd(path, m.filesScanned, visitedInodes),
+					scanDirectoryCmd(path, m.filesScanned, visitedInodes, exclusions),
 				)
+
 			case "esc", "q":
 				return m, func() tea.Msg { return BackMsg{} }
 			}
-			m.textInput, cmd = m.textInput.Update(msg)
+
+			if m.focusIndex == 0 {
+				m.pathInput, cmd = m.pathInput.Update(msg)
+			} else {
+				m.excludeInput, cmd = m.excludeInput.Update(msg)
+			}
 			return m, cmd
 		}
 
+		// --- SCAN EN COURS ---
 		if m.state == StateScanning {
 			if msg.String() == "q" || msg.String() == "esc" {
 				return m, func() tea.Msg { return BackMsg{} }
 			}
 		}
 
+		// --- NAVIGATION FICHIERS ---
 		if m.state == StateBrowsing {
 			items := m.getDisplayItems()
 
 			switch msg.String() {
-
 			case "q":
 				return m, func() tea.Msg { return BackMsg{} }
-
 			case ",", "?":
 				m.showHelp = !m.showHelp
 				return m, nil
 
-			case "g":
-				if len(items) > 0 && m.cursor < len(items) {
-					selected := items[m.cursor]
-					cmd := exec.Command("xdg-open", selected.Path)
-					cmd.Start()
-				}
-				return m, nil
-
-			case "b":
-				if len(items) > 0 && m.cursor < len(items) {
-					selected := items[m.cursor]
-					targetPath := selected.Path
-					if !selected.IsDir {
-						targetPath = filepath.Dir(selected.Path)
-					}
-					shell := os.Getenv("SHELL")
-					if shell == "" {
-						shell = "/bin/bash"
-					}
-					c := exec.Command(shell)
-					c.Dir = targetPath
-					return m, tea.ExecProcess(c, func(err error) tea.Msg { return nil })
-				}
-				return m, nil
-
+			// Recalculer (Refresh)
 			case "r":
 				if m.currentNode != nil {
 					m.state = StateScanning
@@ -181,7 +210,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 					return m, tea.Batch(
 						m.spinner.Tick,
-						refreshDirectoryCmd(m.currentNode.Path, m.filesScanned, visitedInodes),
+						refreshDirectoryCmd(m.currentNode.Path, m.filesScanned, visitedInodes, m.currentExclusions),
 					)
 				}
 				return m, nil
@@ -218,6 +247,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 					}
 				}
+
+			case "g":
+				if len(items) > 0 && m.cursor < len(items) {
+					selected := items[m.cursor]
+					cmd := exec.Command("xdg-open", selected.Path)
+					cmd.Start()
+				}
+				return m, nil
+
+			case "b":
+				if len(items) > 0 && m.cursor < len(items) {
+					selected := items[m.cursor]
+					targetPath := selected.Path
+					if !selected.IsDir {
+						targetPath = filepath.Dir(selected.Path)
+					}
+					shell := os.Getenv("SHELL")
+					if shell == "" {
+						shell = "/bin/bash"
+					}
+					c := exec.Command(shell)
+					c.Dir = targetPath
+					return m, tea.ExecProcess(c, func(err error) tea.Msg { return nil })
+				}
+				return m, nil
 
 			case "up", "k":
 				if m.cursor > 0 {
@@ -260,6 +314,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			newNode := msg.newNode
 			oldNode := m.currentNode
 
+			// La greffe chirurgicale
 			if oldNode.Parent != nil {
 				newNode.Parent = oldNode.Parent
 				newNode.Name = filepath.Base(newNode.Path)
@@ -282,12 +337,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			m.currentNode = newNode
-
 			if m.cursor >= len(m.getDisplayItems()) {
 				m.cursor = 0
 				m.yOffset = 0
 			}
-
 			m.state = StateBrowsing
 		}
 
@@ -304,17 +357,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // --- COMMANDES ---
 
-func scanDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}) tea.Cmd {
+func scanDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
 	return func() tea.Msg {
 		diskSize := scanner.GetPartitionSize(path)
-		root, err := scanner.ScanRecursively(path, nil, counter, visited)
+		root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
 		return scanFinishedMsg{root: root, diskSize: diskSize, err: err}
 	}
 }
 
-func refreshDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}) tea.Cmd {
+func refreshDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
 	return func() tea.Msg {
-		root, err := scanner.ScanRecursively(path, nil, counter, visited)
+		root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
 		return refreshFinishedMsg{newNode: root, err: err}
 	}
 }

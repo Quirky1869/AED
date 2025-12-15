@@ -12,8 +12,30 @@ import (
 func (m Model) View() string {
 	if m.state == StateInputPath {
 		title := titleStyle.Render("AED - Analyseur d'Espace Disque")
-		input := m.textInput.View()
-		return fmt.Sprintf("\n  %s\n\n  Entrez le dossier à analyser :\n  %s\n\n  %s", title, input, helpStyle.Render("(enter: valider • esc: quitter)"))
+
+		var pathLabel, excludeLabel string
+		
+		// Logique de couleur pour savoir quel champ est actif
+		if m.focusIndex == 0 {
+			pathLabel = helpStyle.Render("Entrez le dossier à analyser :")
+			excludeLabel = inactiveStyle.Render("Exclure (fichiers/dossiers, sép. par virgules) :")
+		} else {
+			pathLabel = inactiveStyle.Render("Entrez le dossier à analyser :")
+			excludeLabel = helpStyle.Render("Exclure (fichiers/dossiers, sép. par virgules) :")
+		}
+
+		inputView := m.pathInput.View()
+		excludeView := m.excludeInput.View()
+
+		return fmt.Sprintf(
+			"\n  %s\n\n  %s\n  %s\n\n  %s\n  %s\n\n  %s",
+			title,
+			pathLabel,
+			inputView,
+			excludeLabel,
+			excludeView,
+			helpStyle.Render("(tab: suivant • enter: valider • esc: quitter)"),
+		)
 	}
 
 	if m.state == StateScanning {
