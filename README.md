@@ -34,10 +34,10 @@ Navigation ergonomique : Compatible avec les flèches directionnelles et les tou
 > - b : Ouvre un shell (terminal) directement dans le dossier sélectionné.  
 > - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
 > - r : Permet de re-scanner le dossier actuel
-> - L : Permet de permuter la langue entre Francais :fr: et Anglais :gb:
+> - ctrl+l : Permet de permuter la langue entre Francais :fr: et Anglais :gb:
 > - s : Trier par taille (Ascendant/Descendant)
 > - n : Trier par nom (Ascendant/Descendant)
-> - C : Trier par nombre d'items
+> - C : Trier par nombre d'éléments
 > - h : Afficher ou masquer les fichiers cachés
 
 ## Structure du projet
