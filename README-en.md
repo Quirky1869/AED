@@ -1,4 +1,4 @@
-# AED
+#AED
 
 ![](./_images/aed.jpeg)
 
@@ -10,7 +10,7 @@
 
 ## English README :gb:
 
-An English version of the readme is available [here](README-en.md)
+An English version of the README is available [here](README-en.md)
 
 ## Summary
 <p align="center">
@@ -23,18 +23,20 @@ AED (Disk Space Analyzer) is an interactive disk explorer for terminal. It recur
 
 ## Features
 
-Intelligent scan: Recursive scan that sorts elements by size and manages hardlinks (via inodes).
+Smart scan: Recursive scan that sorts elements by size, name or number of elements and manages hardlinks (via inodes).
 
 Clear visualization: Shows colored progress bars to instantly identify large items.
 
-Ergonomic navigation: Compatible with directional arrows and Vim keys (h, j, k, l) to navigate in the tree.
+Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and Vim keys (h, j, k, l) to navigate the tree.
 
 >[!TIP]
 > Options:
+> - ? : Show help
+> - esc: Return to main menu
 > - b: Opens a shell (terminal) directly in the selected folder.
 > - g: Opens the folder or file in the OS graphical explorer (xdg-open).
 > - r: Allows you to re-scan the current folder
-> - ctrl+l: Allows you to switch the language between French :fr: and English :gb:
+> - ctrl+l: Allows you to switch the language between French:fr: and English:gb:
 > - s: Sort by size (Ascending/Descending)
 > - n: Sort by name (Ascending/Descending)
 > - C: Sort by number of elements
