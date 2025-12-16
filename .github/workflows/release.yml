@@ -1,4 +1,4 @@
-name: Release and commentary
+name: Release
 
 on:
   push:
