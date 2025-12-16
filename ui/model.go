@@ -316,14 +316,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// Remonter au dossier parent
-			case "backspace", "left", "esc":
+			// --- MODIFICATION ICI : Flèche gauche ---
+			// Navigation pure : remonte, mais s'arrête à la racine
+			case "left":
 				if m.currentNode.Parent != nil {
 					m.currentNode = m.currentNode.Parent
 					m.cursor = 0
 					m.yOffset = 0
 					m.applySort()
 				}
+				return m, nil
+
+			// --- MODIFICATION ICI : Backspace et Echap ---
+			// Retour DIRECT à l'écran de saisie (input)
+			case "backspace", "esc":
+				m.state = StateInputPath
+				// Optionnel : on remet le focus sur le champ chemin
+				m.focusIndex = 0
+				m.pathInput.Focus()
+				m.excludeInput.Blur()
+				return m, nil
 
 			// Entrer dans un dossier
 			case "enter", "right", "l":
@@ -336,6 +348,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							m.yOffset = 0
 							m.applySort()
 						}
+						// Note: Pas de retour input ici, ".." virtuel n'existe pas à la racine
 						return m, nil
 					}
 					if selected.Name == "." {

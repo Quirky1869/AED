@@ -57,7 +57,7 @@ var fr = Language{
 	SortCount: "Éléments",
 
 	HelpFooterShort: "\n ?: aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter",
-	HelpFooterFull:  "\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter\n g: explorer • b: shell • r: recalculer • h: fichiers cachés • ctrl+l: langue\n Trier par = s: taille • n: nom • C: éléments",
+	HelpFooterFull:  "\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • esc: revenir menu principal • q: quitter\n g: explorer • b: shell • r: recalculer • h: fichiers cachés • ctrl+l: langue\n Trier par = s: taille • n: nom • C: éléments",
 }
 
 // Textes en Anglais
@@ -87,5 +87,5 @@ var en = Language{
 	SortCount: "Items",
 
 	HelpFooterShort: "\n ?: help • ↑/↓/←/→: nav • enter: select • q: quit",
-	HelpFooterFull:  "\n ?: less help • ↑/↓/←/→: nav • enter: select • q: quit\n g: explore • b: shell • r: refresh • h: hidden files • ctrl+l: lang\n Sort by = s: size • n: name • C: items",
+	HelpFooterFull:  "\n ?: less help • ↑/↓/←/→: nav • enter: select • esc: back main menu • q: quit\n g: explore • b: shell • r: refresh • h: hidden files • ctrl+l: lang\n Sort by = s: size • n: name • C: items",
 }
