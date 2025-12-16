@@ -6,11 +6,12 @@
 ![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=plastic&logo=go)](https://golang.org/)
 [![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/aed/releases)
-[![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/build-and-release.yml)
+[![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/release-and-commentary.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/release-and-commentary.yml)
+[![GitHub Actions Translate](https://github.com/Quirky1869/aed/actions/workflows/translate-en-readme.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/translate-en-readme.yml)
 
 ## English README :gb:
 
-An English version of the README is available [here](README-en.md)
+An English version of the README is available [here](README-en.md)  
 
 ## Résumé
 <p align="center">  
@@ -29,7 +30,7 @@ Visualisation claire : Affiche des barres de progression colorées pour identifi
 
 Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/←/→) et les touches Vim (h, j, k, l) pour naviguer dans l'arborescence.  
 
->[!TIP]
+>[!TIP]  
 > Options :
 > - ? : Afficher l'aide
 > - esc : Revenir au menu principal
