@@ -1,4 +1,4 @@
-# AED
+#AED
 
 ![](./_images/aed.jpeg)
 
@@ -34,13 +34,13 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 > Options:
 > - ? : Show help
 > - esc: Return to main menu
-> - b: Opens a shell (terminal) directly in the selected folder.
-> - g: Opens the folder or file in the OS graphical explorer (xdg-open).
+> - b: Opens a shell (terminal) directly in the selected folder
+> - g: Opens the folder or file in the OS graphical explorer (xdg-open)
 > - r: Allows you to re-scan the current folder
-> - ctrl+l: Allows you to switch the language between French :fr: and English :gb:
+> - ctrl+l: Allows you to switch the language between French:fr: and English:gb:
 > - s: Sort by size (Ascending/Descending)
 > - n: Sort by name (Ascending/Descending)
-> - C: Sort by number of elements
+> - C: Sort by number of elements (Ascending/Descending)
 > - h: Show or hide hidden files
 
 ## Project structure
@@ -54,6 +54,7 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 ├── scan/
 │ └── scanner.go # Scan logic, FileNode, utilities
 └── ui/
+├── autocomplete.go # Autocompletion file (Tab)
 ├── lang.go # Language file (FR, EN)
 ├── styles.go # Lipgloss Styles
 ├── view.go # View() function and formatting
