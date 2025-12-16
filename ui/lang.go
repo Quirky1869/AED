@@ -48,7 +48,10 @@ var fr = Language{
 	ExcludeLabelActive:   "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludeLabelInactive: "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludePlaceholder:   "node_modules, .git, *.tmp",
-	HelpInput:            "(tab: suivant • enter: valider • ctrl+l: langue • esc: quitter)",
+
+	// --- MODIFICATION ICI ---
+	HelpInput: "(tab: compléter • ↑/↓: options • enter: valider • esc: quitter)",
+	// ------------------------
 
 	ScanningTitle: "Analyse en cours...",
 	FilesScanned:  "fichiers scannés",
@@ -109,7 +112,10 @@ var en = Language{
 	ExcludeLabelActive:   "Exclude (files/folders, comma sep.):",
 	ExcludeLabelInactive: "Exclude (files/folders, comma sep.):",
 	ExcludePlaceholder:   "node_modules, .git, *.tmp",
-	HelpInput:            "(tab: next • enter: confirm • ctrl+l: lang • esc: quit)",
+
+	// --- MODIFICATION ICI ---
+	HelpInput: "(tab: autocomplete • ↑/↓: options • enter: confirm • esc: quit)",
+	// ------------------------
 
 	ScanningTitle: "Scanning in progress...",
 	FilesScanned:  "files scanned",

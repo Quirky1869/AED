@@ -73,6 +73,11 @@ type Model struct {
 	sortDesc   bool
 	showHidden bool
 
+	// Variables pour l'autocomplétion cyclique
+	suggestions     []string
+	suggestionIndex int
+	suggestionBase  string
+
 	width, height int
 	err           error
 }
@@ -113,6 +118,7 @@ func New(w, h int) Model {
 		sortMode:     SortBySize,
 		sortDesc:     true,
 		showHidden:   true,
+		suggestions:  []string{},
 	}
 }
 
@@ -180,21 +186,114 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.state == StateInputPath {
 			switch msg.String() {
 
-			// Navigation entre les champs (Tab/Arrow)
-			case "tab", "shift+tab", "up", "down":
+			// Autocomplétion intelligente
+			case "tab":
+				var activeInput *textinput.Model
+				isExcludeField := false
+
 				if m.focusIndex == 0 {
-					m.focusIndex = 1
-					m.pathInput.Blur()
-					m.excludeInput.Focus()
+					activeInput = &m.pathInput
 				} else {
-					m.focusIndex = 0
-					m.excludeInput.Blur()
-					m.pathInput.Focus()
+					activeInput = &m.excludeInput
+					isExcludeField = true
 				}
+
+				// Si c'est le début d'un cycle
+				if len(m.suggestions) == 0 {
+					fullText := activeInput.Value()
+					searchStr := fullText
+					prefix := ""
+
+					if isExcludeField {
+						lastComma := strings.LastIndex(fullText, ",")
+						if lastComma != -1 {
+							prefix = fullText[:lastComma+1] + " "
+							searchStr = strings.TrimSpace(fullText[lastComma+1:])
+						}
+					}
+
+					baseDir, candidates := GetAutocompleteSuggestions(searchStr, true)
+
+					if len(candidates) > 0 {
+						m.suggestions = candidates
+						m.suggestionBase = prefix + baseDir
+						m.suggestionIndex = 0
+
+						candidate := candidates[0]
+						newValue := m.suggestionBase + candidate
+						if isDirOrShouldSlash(candidate) && !strings.HasSuffix(newValue, string(os.PathSeparator)) {
+							newValue += string(os.PathSeparator)
+						}
+
+						activeInput.SetValue(newValue)
+						activeInput.SetCursor(len(newValue))
+					}
+				} else {
+					// Cycle suivant
+					m.suggestionIndex = (m.suggestionIndex + 1) % len(m.suggestions)
+
+					candidate := m.suggestions[m.suggestionIndex]
+					newValue := m.suggestionBase + candidate
+
+					if isDirOrShouldSlash(candidate) && !strings.HasSuffix(newValue, string(os.PathSeparator)) {
+						newValue += string(os.PathSeparator)
+					}
+
+					activeInput.SetValue(newValue)
+					activeInput.SetCursor(len(newValue))
+				}
+				return m, nil
+
+			case "shift+tab":
+				// Cycle arrière si autocomplétion active
+				if len(m.suggestions) > 0 {
+					var activeInput *textinput.Model
+					if m.focusIndex == 0 {
+						activeInput = &m.pathInput
+					} else {
+						activeInput = &m.excludeInput
+					}
+
+					m.suggestionIndex--
+					if m.suggestionIndex < 0 {
+						m.suggestionIndex = len(m.suggestions) - 1
+					}
+
+					candidate := m.suggestions[m.suggestionIndex]
+					newValue := m.suggestionBase + candidate
+
+					if isDirOrShouldSlash(candidate) && !strings.HasSuffix(newValue, string(os.PathSeparator)) {
+						newValue += string(os.PathSeparator)
+					}
+
+					activeInput.SetValue(newValue)
+					activeInput.SetCursor(len(newValue))
+					return m, nil
+				}
+
+				// Sinon navigation
+				m.suggestions = nil
+				m.focusIndex = 0
+				m.excludeInput.Blur()
+				m.pathInput.Focus()
 				return m, textinput.Blink
 
-			// Validation et lancement du scan
+			case "up":
+				m.suggestions = nil // Reset
+				m.focusIndex = 0
+				m.excludeInput.Blur()
+				m.pathInput.Focus()
+				return m, textinput.Blink
+
+			case "down":
+				m.suggestions = nil // Reset
+				m.focusIndex = 1
+				m.pathInput.Blur()
+				m.excludeInput.Focus()
+				return m, textinput.Blink
+
 			case "enter":
+				m.suggestions = nil
 				rawInput := m.pathInput.Value()
 				path := rawInput
 				if path == "." {
@@ -209,6 +308,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					for _, p := range parts {
 						trimmed := strings.TrimSpace(p)
 						expanded := scanner.ExpandPath(trimmed)
+						expanded = strings.TrimRight(expanded, string(os.PathSeparator))
 						exclusions = append(exclusions, expanded)
 					}
 				}
@@ -223,9 +323,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					scanDirectoryCmd(path, m.filesScanned, visitedInodes, exclusions),
 				)
 
-			// Gestion quitter dans l'input
 			case "esc":
 				return m, func() tea.Msg { return BackMsg{} }
+
+			// Pour toute autre touche, on reset les suggestions
+			default:
+				m.suggestions = nil
 			}
 
 			if m.focusIndex == 0 {
@@ -236,7 +339,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		// Gestion pendant le scan (Permet d'annuler)
+		// Gestion pendant le scan
 		if m.state == StateScanning {
 			if msg.String() == "q" || msg.String() == "esc" {
 				return m, func() tea.Msg { return BackMsg{} }
@@ -254,7 +357,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showHelp = !m.showHelp
 				return m, nil
 
-			// Afficher/Masquer les fichiers cachés
 			case "h":
 				m.showHidden = !m.showHidden
 				newItems := m.getDisplayItems()
@@ -272,7 +374,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// Options de tri (Taille, Nom, Nombre d'éléments)
 			case "s":
 				if m.sortMode == SortBySize {
 					m.sortDesc = !m.sortDesc
@@ -303,7 +404,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.applySort()
 				return m, nil
 
-			// Rafraîchir le dossier courant
 			case "r":
 				if m.currentNode != nil {
 					m.state = StateScanning
@@ -316,8 +416,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// --- MODIFICATION ICI : Flèche gauche ---
-			// Navigation pure : remonte, mais s'arrête à la racine
 			case "left":
 				if m.currentNode.Parent != nil {
 					m.currentNode = m.currentNode.Parent
@@ -327,17 +425,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// --- MODIFICATION ICI : Backspace et Echap ---
-			// Retour DIRECT à l'écran de saisie (input)
 			case "backspace", "esc":
 				m.state = StateInputPath
-				// Optionnel : on remet le focus sur le champ chemin
 				m.focusIndex = 0
 				m.pathInput.Focus()
 				m.excludeInput.Blur()
 				return m, nil
 
-			// Entrer dans un dossier
 			case "enter", "right", "l":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
@@ -348,7 +442,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							m.yOffset = 0
 							m.applySort()
 						}
-						// Note: Pas de retour input ici, ".." virtuel n'existe pas à la racine
 						return m, nil
 					}
 					if selected.Name == "." {
@@ -367,7 +460,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
-			// Ouvrir avec l'explorateur de fichiers par défaut (xdg-open)
 			case "g":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
@@ -376,7 +468,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// Ouvrir un shell dans le dossier courant
 			case "b":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
@@ -394,7 +485,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
-			// Navigation verticale (Curseur)
 			case "up", "k":
 				if m.cursor > 0 {
 					m.cursor--
@@ -475,6 +565,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+// Helper pour savoir s'il faut ajouter un slash
+func isDirOrShouldSlash(name string) bool {
+	return strings.HasSuffix(name, string(os.PathSeparator))
 }
 
 // Commande Tea pour lancer le scan complet

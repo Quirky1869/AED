@@ -34,13 +34,13 @@ Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/�
 > Options :
 > - ? : Afficher l'aide
 > - esc : Revenir au menu principal
-> - b : Ouvre un shell (terminal) directement dans le dossier sélectionné.  
-> - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
+> - b : Ouvre un shell (terminal) directement dans le dossier sélectionné  
+> - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open)  
 > - r : Permet de re-scanner le dossier actuel
 > - ctrl+l : Permet de permuter la langue entre Francais :fr: et Anglais :gb:
 > - s : Trier par taille (Ascendant/Descendant)
 > - n : Trier par nom (Ascendant/Descendant)
-> - C : Trier par nombre d'éléments
+> - C : Trier par nombre d'éléments (Ascendant/Descendant)
 > - h : Afficher ou masquer les fichiers cachés
 
 ## Structure du projet
@@ -50,14 +50,15 @@ Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/�
 ├── go.mod
 ├── cmd/
 │   └── app/
-│       └── main.go  # Entrée du programme
+│       └── main.go      # Entrée du programme
 ├── scanner/
-│   └── scanner.go   # Logique de scan, FileNode, utilitaires
+│   └── scanner.go       # Logique de scan, FileNode, utilitaires
 └── ui/
-    ├── lang.go      # Fichier de langues (FR, EN)
-    ├── styles.go    # Styles Lipgloss
-    ├── view.go      # Fonction View() et formatage
-    └── model.go     # Structure Model, Update() et Init()
+    ├── autocomplete.go  # Fichier d'autocompletion (Tab)
+    ├── lang.go          # Fichier de langues (FR, EN)
+    ├── styles.go        # Styles Lipgloss
+    ├── view.go          # Fonction View() et formatage
+    └── model.go         # Structure Model, Update() et Init()
 ```
 
 ## Releases
