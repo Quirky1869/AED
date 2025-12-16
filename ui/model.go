@@ -165,7 +165,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Bascule de la langue (FR/EN)
-		if msg.String() == "l" || msg.String() == "L" || msg.String() == "ctrl+l" {
+		if msg.String() == "ctrl+l" {
 			if m.lang.Code == "FR" {
 				m.lang = en
 			} else {
@@ -223,7 +223,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					scanDirectoryCmd(path, m.filesScanned, visitedInodes, exclusions),
 				)
 
-			case "esc", "q":
+			// Gestion quitter dans l'input
+			case "esc":
 				return m, func() tea.Msg { return BackMsg{} }
 			}
 
@@ -477,5 +478,5 @@ func refreshDirectoryCmd(path string, counter *int64, visited map[scanner.FileID
 	return func() tea.Msg {
 		root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
 		return refreshFinishedMsg{newNode: root, err: err}
-    }
+	}
 }

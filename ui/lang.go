@@ -41,7 +41,7 @@ var fr = Language{
 	ExcludeLabelActive:   "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludeLabelInactive: "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludePlaceholder:   "node_modules, .git, *.tmp",
-	HelpInput:            "(tab: suivant • enter: valider • L: langue • esc: quitter)",
+	HelpInput:            "(tab: suivant • enter: valider • ctrl+l: langue • esc: quitter)",
 
 	ScanningTitle: "Analyse en cours...",
 	FilesScanned:  "fichiers scannés",
@@ -57,7 +57,7 @@ var fr = Language{
 	SortCount: "Éléments",
 
 	HelpFooterShort: "\n ?: aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter",
-	HelpFooterFull:  "\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter\n g: explorer • b: shell • r: recalculer • h: fichiers cachés • L: langue\n Trier par = s: taille • n: nom • C: éléments",
+	HelpFooterFull:  "\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter\n g: explorer • b: shell • r: recalculer • h: fichiers cachés • ctrl+l: langue\n Trier par = s: taille • n: nom • C: éléments",
 }
 
 // Textes en Anglais
@@ -71,7 +71,7 @@ var en = Language{
 	ExcludeLabelActive:   "Exclude (files/folders, comma sep.):",
 	ExcludeLabelInactive: "Exclude (files/folders, comma sep.):",
 	ExcludePlaceholder:   "node_modules, .git, *.tmp",
-	HelpInput:            "(tab: next • enter: confirm • L: lang • esc: quit)",
+	HelpInput:            "(tab: next • enter: confirm • ctrl+l: lang • esc: quit)",
 
 	ScanningTitle: "Scanning in progress...",
 	FilesScanned:  "files scanned",
@@ -87,5 +87,5 @@ var en = Language{
 	SortCount: "Items",
 
 	HelpFooterShort: "\n ?: help • ↑/↓/←/→: nav • enter: select • q: quit",
-	HelpFooterFull:  "\n ?: less help • ↑/↓/←/→: nav • enter: select • q: quit\n g: explore • b: shell • r: refresh • h: hidden files • L: lang\n Sort by = s: size • n: name • C: items",
+	HelpFooterFull:  "\n ?: less help • ↑/↓/←/→: nav • enter: select • q: quit\n g: explore • b: shell • r: refresh • h: hidden files • ctrl+l: lang\n Sort by = s: size • n: name • C: items",
 }
