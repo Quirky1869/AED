@@ -7,14 +7,19 @@ var (
 	pathStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true)
 	infoStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff"))
 
-	helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00d4"))
-
 	inactiveStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#555555"))
 
-	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("#333333")).Bold(true)
+	// Couleur pour les touches d'aide
+	helpDescStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00d4"))
+	// Couleur pour la description de l'aide
+	helpKeyStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff"))
+
+	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("#2b2b2b")).Bold(true)
 	barFull       = lipgloss.NewStyle().Foreground(lipgloss.Color("#9900ff"))
 	barEmpty      = lipgloss.NewStyle().Foreground(lipgloss.Color("#444444"))
 
+	// Couleur du spinner pendant le chargement (fichiers scannés)
 	countStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff")).Bold(true).PaddingLeft(2)
+	// Couleur du type de tri
 	sortStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#ffe600"))
 )

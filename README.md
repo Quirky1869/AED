@@ -10,7 +10,7 @@
 
 ## English README :gb:
 
-An English version of the readme is available [here](README-en.md)
+An English version of the README is available [here](README-en.md)
 
 ## Résumé
 <p align="center">  
@@ -23,14 +23,16 @@ AED (Analyseur d'Espace Disque) est un explorateur de disque interactif pour ter
 
 ## Fonctionnalités
 
-Analyse intelligente : Scan récursif qui trie les éléments par taille et gère les hardlinks (via inodes).  
+Analyse intelligente : Scan récursif qui trie les éléments par taille, nom ou nombre d'éléments et gère les hardlinks (via inodes).  
 
 Visualisation claire : Affiche des barres de progression colorées pour identifier instantanément les éléments volumineux.  
 
-Navigation ergonomique : Compatible avec les flèches directionnelles et les touches Vim (h, j, k, l) pour naviguer dans l'arborescence.  
+Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/←/→) et les touches Vim (h, j, k, l) pour naviguer dans l'arborescence.  
 
 >[!TIP]
 > Options :
+> - ? : Afficher l'aide
+> - esc : Revenir au menu principal
 > - b : Ouvre un shell (terminal) directement dans le dossier sélectionné.  
 > - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open).  
 > - r : Permet de re-scanner le dossier actuel

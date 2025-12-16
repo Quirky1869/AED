@@ -15,18 +15,19 @@ func (m Model) View() string {
 	if m.state == StateInputPath {
 		title := titleStyle.Render(m.lang.Title)
 		var pathLabel, excludeLabel string
+		// Note: helpDescStyle remplace helpStyle ici
 		if m.focusIndex == 0 {
-			pathLabel = helpStyle.Render(m.lang.PathLabelActive)
+			pathLabel = helpDescStyle.Render(m.lang.PathLabelActive)
 			excludeLabel = inactiveStyle.Render(m.lang.ExcludeLabelInactive)
 		} else {
 			pathLabel = inactiveStyle.Render(m.lang.PathLabelInactive)
-			excludeLabel = helpStyle.Render(m.lang.ExcludeLabelActive)
+			excludeLabel = helpDescStyle.Render(m.lang.ExcludeLabelActive)
 		}
 		inputView := m.pathInput.View()
 		excludeView := m.excludeInput.View()
 		return fmt.Sprintf(
 			"\n  %s\n\n  %s\n  %s\n\n  %s\n  %s\n\n  %s",
-			title, pathLabel, inputView, excludeLabel, excludeView, helpStyle.Render(m.lang.HelpInput),
+			title, pathLabel, inputView, excludeLabel, excludeView, helpDescStyle.Render(m.lang.HelpInput),
 		)
 	}
 
@@ -37,7 +38,7 @@ func (m Model) View() string {
 			"\n  %s %s\n\n%s %s\n\n  %s",
 			m.spinner.View(), m.lang.ScanningTitle,
 			countStyle.Render(fmt.Sprintf("%d", count)), m.lang.FilesScanned,
-			helpStyle.Render(m.lang.HelpScanning),
+			helpDescStyle.Render(m.lang.HelpScanning),
 		)
 	}
 
@@ -137,17 +138,45 @@ func (m Model) View() string {
 
 		content := strings.Join(rows, "\n")
 
+		// Construction du footer bicolore ---
 		var footer string
 		if m.showHelp {
-			footer = helpStyle.Render(m.lang.HelpFooterShort)
+			footer = renderFooter(m.lang.HelpFooterShort)
 		} else {
-			footer = helpStyle.Render(m.lang.HelpFooterFull)
+			footer = renderFooter(m.lang.HelpFooterFull)
 		}
 
 		return fmt.Sprintf("\n%s\n%s\n%s", header, content, footer)
 	}
 
 	return ""
+}
+
+// Fonction utilitaire pour générer le footer avec deux couleurs
+func renderFooter(lines [][]HelpItem) string {
+	var sb strings.Builder
+	sep := helpDescStyle.Render(" • ") // Le séparateur en rose
+
+	for _, line := range lines {
+		sb.WriteString("\n ") // Saut de ligne et marge gauche
+		var parts []string
+
+		for _, item := range line {
+			var part string
+			// Si la clé est vide (ex: "Trier par ="), on n'affiche que la description
+			if item.Key == "" {
+				part = helpDescStyle.Render(item.Desc)
+			} else {
+				// Clé en Cyan, Description en Rose
+				key := helpKeyStyle.Render(item.Key)
+				desc := helpDescStyle.Render(": " + item.Desc)
+				part = key + desc
+			}
+			parts = append(parts, part)
+		}
+		sb.WriteString(strings.Join(parts, sep))
+	}
+	return sb.String()
 }
 
 // Récupère les éléments à afficher en filtrant les fichiers cachés si nécessaire

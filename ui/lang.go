@@ -1,5 +1,11 @@
 package ui
 
+// Nouvelle structure pour découper l'aide
+type HelpItem struct {
+	Key  string
+	Desc string
+}
+
 // Structure contenant tous les textes de l'interface
 type Language struct {
 	Code string
@@ -26,8 +32,9 @@ type Language struct {
 	SortName  string
 	SortCount string
 
-	HelpFooterShort string
-	HelpFooterFull  string
+	// Modification : On utilise des tableaux structurés au lieu de strings
+	HelpFooterShort [][]HelpItem
+	HelpFooterFull  [][]HelpItem
 }
 
 // Textes en Français
@@ -56,8 +63,39 @@ var fr = Language{
 	SortName:  "Nom",
 	SortCount: "Éléments",
 
-	HelpFooterShort: "\n ?: aide • ↑/↓/←/→: naviguer • enter: sélectionner • q: quitter",
-	HelpFooterFull:  "\n ?: réduire aide • ↑/↓/←/→: naviguer • enter: sélectionner • esc: revenir menu principal • q: quitter\n g: explorer • b: shell • r: recalculer • h: fichiers cachés • ctrl+l: langue\n Trier par = s: taille • n: nom • C: éléments",
+	// Footer Court (1 ligne)
+	HelpFooterShort: [][]HelpItem{
+		{
+			{"?", "aide"},
+			{"↑/↓/←/→", "naviguer"},
+			{"enter", "sélectionner"},
+			{"q", "quitter"},
+		},
+	},
+
+	// Footer Complet (3 lignes)
+	HelpFooterFull: [][]HelpItem{
+		{
+			{"?", "réduire aide"},
+			{"↑/↓/←/→", "naviguer"},
+			{"enter", "sélectionner"},
+			{"esc", "revenir menu"},
+			{"q", "quitter"},
+		},
+		{
+			{"g", "explorer"},
+			{"b", "shell"},
+			{"r", "recalculer"},
+			{"h", "fichiers cachés"},
+			{"ctrl+l", "langue"},
+		},
+		{
+			{"", "Trier par ="},
+			{"s", "taille"},
+			{"n", "nom"},
+			{"C", "éléments"},
+		},
+	},
 }
 
 // Textes en Anglais
@@ -86,6 +124,35 @@ var en = Language{
 	SortName:  "Name",
 	SortCount: "Items",
 
-	HelpFooterShort: "\n ?: help • ↑/↓/←/→: nav • enter: select • q: quit",
-	HelpFooterFull:  "\n ?: less help • ↑/↓/←/→: nav • enter: select • esc: back main menu • q: quit\n g: explore • b: shell • r: refresh • h: hidden files • ctrl+l: lang\n Sort by = s: size • n: name • C: items",
+	HelpFooterShort: [][]HelpItem{
+		{
+			{"?", "help"},
+			{"↑/↓/←/→", "nav"},
+			{"enter", "select"},
+			{"q", "quit"},
+		},
+	},
+
+	HelpFooterFull: [][]HelpItem{
+		{
+			{"?", "less help"},
+			{"↑/↓/←/→", "nav"},
+			{"enter", "select"},
+			{"esc", "back menu"},
+			{"q", "quit"},
+		},
+		{
+			{"g", "explore"},
+			{"b", "shell"},
+			{"r", "refresh"},
+			{"h", "hidden files"},
+			{"ctrl+l", "lang"},
+		},
+		{
+			{"", "Sort by ="},
+			{"s", "size"},
+			{"n", "name"},
+			{"C", "items"},
+		},
+	},
 }
