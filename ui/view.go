@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/charmbracelet/lipgloss"
+
 	"aed/scanner"
 )
 
@@ -15,7 +17,6 @@ func (m Model) View() string {
 	if m.state == StateInputPath {
 		title := titleStyle.Render(m.lang.Title)
 		var pathLabel, excludeLabel string
-		// Note: helpDescStyle remplace helpStyle ici
 		if m.focusIndex == 0 {
 			pathLabel = helpDescStyle.Render(m.lang.PathLabelActive)
 			excludeLabel = inactiveStyle.Render(m.lang.ExcludeLabelInactive)
@@ -48,15 +49,13 @@ func (m Model) View() string {
 			return m.lang.ErrorEmpty
 		}
 
+		// --- CONSTRUCTION DE L'EN-TÊTE ---
+
+		// 1. Préparation des éléments
 		title := titleStyle.Render(m.lang.Title)
 		path := pathStyle.Render(m.currentNode.Path)
-		totalSize := infoStyle.Render(fmt.Sprintf("%s: %s", m.lang.TotalLabel, formatBytes(m.currentNode.Size)))
 
-		var diskSizeStr string
-		if m.diskTotalSize > 0 {
-			diskSizeStr = infoStyle.Render(fmt.Sprintf("%s: %s", m.lang.DiskLabel, formatBytes(m.diskTotalSize)))
-		}
-
+		// 2. Calcul du Tri
 		var sortName string
 		switch m.sortMode {
 		case SortByName:
@@ -71,17 +70,35 @@ func (m Model) View() string {
 		if !m.sortDesc {
 			arrow = "↑"
 		}
+		sortStr := sortStyle.Render(fmt.Sprintf("[%s: %s %s]", m.lang.SortLabel, sortName, arrow))
 
-		sortStr := sortStyle.Render(fmt.Sprintf("%s: %s %s", m.lang.SortLabel, sortName, arrow))
+		// 3. Calcul des statistiques
+		totalSize := infoStyle.Render(fmt.Sprintf("(%s: %s)", m.lang.TotalLabel, formatBytes(m.currentNode.Size)))
+		var diskSizeStr string
+		if m.diskTotalSize > 0 {
+			diskSizeStr = infoStyle.Render(fmt.Sprintf("(%s: %s)", m.lang.DiskLabel, formatBytes(m.diskTotalSize)))
+		}
 
-		header := fmt.Sprintf("  %s  %s  (%s)  (%s)  [%s]\n", title, path, totalSize, diskSizeStr, sortStr)
+		paddingLen := 2 + lipgloss.Width(title) + 2
+		padding := strings.Repeat(" ", paddingLen)
+
+
+		headerLine1 := fmt.Sprintf("  %s  %s  %s  %s", title, path, totalSize, diskSizeStr)
+		
+		headerLine2 := fmt.Sprintf("%s%s", padding, sortStr)
+
+		// On combine les deux avec un saut de ligne
+		header := headerLine1 + "\n" + headerLine2 + "\n"
+
+		// ---------------------------------
 
 		footerHeight := 2
 		if !m.showHelp {
 			footerHeight = 0
 		}
 
-		visibleHeight := m.height - 5 - footerHeight
+		// Note : On retire 1 ligne de plus à visibleHeight car le header fait maintenant 2 lignes + saut
+		visibleHeight := m.height - 6 - footerHeight
 		if visibleHeight < 1 {
 			visibleHeight = 1
 		}
@@ -138,7 +155,6 @@ func (m Model) View() string {
 
 		content := strings.Join(rows, "\n")
 
-		// Construction du footer bicolore ---
 		var footer string
 		if m.showHelp {
 			footer = renderFooter(m.lang.HelpFooterShort)
@@ -155,19 +171,17 @@ func (m Model) View() string {
 // Fonction utilitaire pour générer le footer avec deux couleurs
 func renderFooter(lines [][]HelpItem) string {
 	var sb strings.Builder
-	sep := helpDescStyle.Render(" • ") // Le séparateur en rose
+	sep := helpDescStyle.Render(" • ") 
 
 	for _, line := range lines {
-		sb.WriteString("\n ") // Saut de ligne et marge gauche
+		sb.WriteString("\n ") 
 		var parts []string
 
 		for _, item := range line {
 			var part string
-			// Si la clé est vide (ex: "Trier par ="), on n'affiche que la description
 			if item.Key == "" {
 				part = helpDescStyle.Render(item.Desc)
 			} else {
-				// Clé en Cyan, Description en Rose
 				key := helpKeyStyle.Render(item.Key)
 				desc := helpDescStyle.Render(": " + item.Desc)
 				part = key + desc
@@ -179,7 +193,7 @@ func renderFooter(lines [][]HelpItem) string {
 	return sb.String()
 }
 
-// Récupère les éléments à afficher en filtrant les fichiers cachés si nécessaire
+// Récupère les éléments à afficher
 func (m Model) getDisplayItems() []*scanner.FileNode {
 	var items []*scanner.FileNode
 	if m.currentNode == nil {
@@ -202,7 +216,7 @@ func (m Model) getDisplayItems() []*scanner.FileNode {
 	return items
 }
 
-// Formateur de taille (Bytes -> TiB)
+// Formateur de taille
 func formatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {

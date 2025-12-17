@@ -67,6 +67,45 @@ Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici
 
 ![](./_images/gif/aed.gif)  
 
+## Couleurs
+
+Vous pouvez changer les couleurs de l'interface à partir du fichier `ui/styles.go`  
+
+<details>  
+<summary style="font-weight: bold; color: #500aff;">ui/styles.go (Cliquer pour déplier)</summary>  
+
+### Selection du dossier et exclusions
+
+<img src="./_images/DSA1.png" alt="DSA1">  
+  
+> - 1 = titleStyle
+> - 2 = helpDescStyle
+> - 3 = inactiveStyle
+> - 4 = helpDescStyle
+
+### Scan
+<img src="./_images/DSA2.png" alt="DSA2">  
+
+> - 1 = spinnerStyle
+> - 2 = countStyle
+> - 3 = helpDescStyle
+
+### AED
+
+<img src="./_images/DSA3.png" alt="DSA3">  
+
+> - 1 = sortStyle
+> - 2 = infoStyle
+> - 3 = infoStyle
+> - 4 = pathStyle
+> - 5 = selectedStyle
+> - 6 = barFull
+> - 7 = barEmpty
+> - 8 = helpKeyStyle
+> - 9 = helpDescStyle
+
+</details>  
+
 ## Technologies utilisées
 
 | Librairie                                                    | Utilisation                          |
