@@ -56,9 +56,9 @@ Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/�
 └── ui/
     ├── autocomplete.go  # Fichier d'autocompletion (Tab)
     ├── lang.go          # Fichier de langues (FR, EN)
+    ├── model.go         # Structure Model, Update() et Init()
     ├── styles.go        # Styles Lipgloss
-    ├── view.go          # Fonction View() et formatage
-    └── model.go         # Structure Model, Update() et Init()
+    └── view.go          # Fonction View() et formatage
 ```
 
 ## Releases
@@ -103,6 +103,8 @@ Vous pouvez changer les couleurs de l'interface à partir du fichier `ui/styles.
 > - 7 = barEmpty
 > - 8 = helpKeyStyle
 > - 9 = helpDescStyle
+> - 10 = hiddenStyle
+> - 11 = fileCountStyle
 
 </details>  
 

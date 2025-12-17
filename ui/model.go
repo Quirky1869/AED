@@ -15,7 +15,7 @@ import (
 	"aed/scanner"
 )
 
-// Messages internes pour la gestion asynchrone
+// Messages internes pour le traitement asynchrone
 type BackMsg struct{}
 
 type refreshFinishedMsg struct {
@@ -29,7 +29,7 @@ type scanFinishedMsg struct {
 	err      error
 }
 
-// Machine à états de l'interface
+// États de la machine à états principale
 type SessionState int
 
 const (
@@ -38,7 +38,7 @@ const (
 	StateBrowsing
 )
 
-// Modes de tri disponibles
+// Modes de tri des fichiers
 type SortMode int
 
 const (
@@ -47,7 +47,7 @@ const (
 	SortByCount
 )
 
-// Modèle principal contenant l'état de l'application
+// Modèle principal contenant l'état de l'application et les données
 type Model struct {
 	state        SessionState
 	pathInput    textinput.Model
@@ -68,11 +68,12 @@ type Model struct {
 	currentExclusions []string
 	lang              Language
 
+	// Options de tri et d'affichage
 	sortMode   SortMode
 	sortDesc   bool
 	showHidden bool
 
-	// Variables pour l'autocomplétion cyclique
+	// État pour l'autocomplétion cyclique
 	suggestions     []string
 	suggestionIndex int
 	suggestionBase  string
@@ -125,7 +126,7 @@ func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-// Applique le tri sur les enfants du dossier courant selon le mode sélectionné
+// Applique le tri sur le dossier courant selon le mode (Taille, Nom, Nombre)
 func (m *Model) applySort() {
 	if m.currentNode == nil || len(m.currentNode.Children) == 0 {
 		return
@@ -140,7 +141,7 @@ func (m *Model) applySort() {
 		case SortByName:
 			isLess = strings.ToLower(a.Name) < strings.ToLower(b.Name)
 		case SortByCount:
-			isLess = len(a.Children) < len(b.Children)
+			isLess = a.FileCount < b.FileCount
 		default:
 			isLess = a.Size < b.Size
 		}
@@ -169,7 +170,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return BackMsg{} }
 		}
 
-		// Bascule de la langue (FR/EN)
+		// Bascule de la langue
 		if msg.String() == "ctrl+l" {
 			if m.lang.Code == "FR" {
 				m.lang = en
@@ -181,11 +182,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Gestion de la vue de saisie (Input)
+		// Gestion de la vue de Saisie (Input)
 		if m.state == StateInputPath {
 			switch msg.String() {
 
-			// Autocomplétion intelligente
+			// Gestion de l'autocomplétion cyclique (Tab / Shift+Tab)
 			case "tab":
 				var activeInput *textinput.Model
 				isExcludeField := false
@@ -197,7 +198,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					isExcludeField = true
 				}
 
-				// Si c'est le début d'un cycle
+				// Initialisation du cycle de suggestions
 				if len(m.suggestions) == 0 {
 					fullText := activeInput.Value()
 					searchStr := fullText
@@ -228,7 +229,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						activeInput.SetCursor(len(newValue))
 					}
 				} else {
-					// Cycle suivant
+					// Passage au candidat suivant dans le cycle
 					m.suggestionIndex = (m.suggestionIndex + 1) % len(m.suggestions)
 
 					candidate := m.suggestions[m.suggestionIndex]
@@ -244,7 +245,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 
 			case "shift+tab":
-				// Cycle arrière si autocomplétion active
+				// Navigation arrière dans le cycle de suggestions
 				if len(m.suggestions) > 0 {
 					var activeInput *textinput.Model
 					if m.focusIndex == 0 {
@@ -270,7 +271,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
-				// Sinon navigation
+				// Sinon, changement de focus standard
 				m.suggestions = nil
 				m.focusIndex = 0
 				m.excludeInput.Blur()
@@ -278,14 +279,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, textinput.Blink
 
 			case "up":
-				m.suggestions = nil // Reset
+				m.suggestions = nil
 				m.focusIndex = 0
 				m.excludeInput.Blur()
 				m.pathInput.Focus()
 				return m, textinput.Blink
 
 			case "down":
-				m.suggestions = nil // Reset
+				m.suggestions = nil
 				m.focusIndex = 1
 				m.pathInput.Blur()
 				m.excludeInput.Focus()
@@ -325,7 +326,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "esc":
 				return m, func() tea.Msg { return BackMsg{} }
 
-			// Pour toute autre touche, on reset les suggestions
 			default:
 				m.suggestions = nil
 			}
@@ -336,254 +336,252 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.excludeInput, cmd = m.excludeInput.Update(msg)
 			}
 			return m, cmd
-		}
+        }
 
-		// Gestion pendant le scan
-		if m.state == StateScanning {
-			if msg.String() == "q" || msg.String() == "esc" {
-				return m, func() tea.Msg { return BackMsg{} }
-			}
-		}
+        // Gestion de la vue Scan
+        if m.state == StateScanning {
+            if msg.String() == "q" || msg.String() == "esc" {
+                return m, func() tea.Msg { return BackMsg{} }
+            }
+        }
 
-		// Gestion de la navigation (Browsing)
-		if m.state == StateBrowsing {
-			items := m.getDisplayItems()
+        // Gestion de la navigation (Browsing)
+        if m.state == StateBrowsing {
+            items := m.getDisplayItems()
 
-			switch msg.String() {
-			case "q":
-				return m, func() tea.Msg { return BackMsg{} }
-			case ",", "?":
-				m.showHelp = !m.showHelp
-				return m, nil
+            switch msg.String() {
+            case "q":
+                return m, func() tea.Msg { return BackMsg{} }
+            case ",", "?":
+                m.showHelp = !m.showHelp
+                return m, nil
 
-			case "h":
-				m.showHidden = !m.showHidden
-				newItems := m.getDisplayItems()
-				if m.cursor >= len(newItems) {
-					m.cursor = len(newItems) - 1
-					if m.cursor < 0 {
-						m.cursor = 0
-					}
-				}
-				visibleHeight := m.height - 7
-				if visibleHeight > 0 {
-					if m.cursor < m.yOffset {
-						m.yOffset = m.cursor
-					}
-				}
-				return m, nil
+            case "h":
+                m.showHidden = !m.showHidden
+                newItems := m.getDisplayItems()
+                if m.cursor >= len(newItems) {
+                    m.cursor = len(newItems) - 1
+                    if m.cursor < 0 {
+                        m.cursor = 0
+                    }
+                }
+                visibleHeight := m.height - 7
+                if visibleHeight > 0 {
+                    if m.cursor < m.yOffset {
+                        m.yOffset = m.cursor
+                    }
+                }
+                return m, nil
 
-			case "s":
-				if m.sortMode == SortBySize {
-					m.sortDesc = !m.sortDesc
-				} else {
-					m.sortMode = SortBySize
-					m.sortDesc = true
-				}
-				m.applySort()
-				return m, nil
+            // Options de Tri
+            case "s":
+                if m.sortMode == SortBySize {
+                    m.sortDesc = !m.sortDesc
+                } else {
+                    m.sortMode = SortBySize
+                    m.sortDesc = true
+                }
+                m.applySort()
+                return m, nil
 
-			case "n":
-				if m.sortMode == SortByName {
-					m.sortDesc = !m.sortDesc
-				} else {
-					m.sortMode = SortByName
-					m.sortDesc = false
-				}
-				m.applySort()
-				return m, nil
+            case "n":
+                if m.sortMode == SortByName {
+                    m.sortDesc = !m.sortDesc
+                } else {
+                    m.sortMode = SortByName
+                    m.sortDesc = false
+                }
+                m.applySort()
+                return m, nil
 
-			case "C":
-				if m.sortMode == SortByCount {
-					m.sortDesc = !m.sortDesc
-				} else {
-					m.sortMode = SortByCount
-					m.sortDesc = true
-				}
-				m.applySort()
-				return m, nil
+            case "C":
+                if m.sortMode == SortByCount {
+                    m.sortDesc = !m.sortDesc
+                } else {
+                    m.sortMode = SortByCount
+                    m.sortDesc = true
+                }
+                m.applySort()
+                return m, nil
 
-			case "r":
-				if m.currentNode != nil {
-					m.state = StateScanning
-					atomic.StoreInt64(m.filesScanned, 0)
-					visitedInodes := make(map[scanner.FileID]struct{})
-					return m, tea.Batch(
-						m.spinner.Tick,
-						refreshDirectoryCmd(m.currentNode.Path, m.filesScanned, visitedInodes, m.currentExclusions),
-					)
-				}
-				return m, nil
+            case "r":
+                if m.currentNode != nil {
+                    m.state = StateScanning
+                    atomic.StoreInt64(m.filesScanned, 0)
+                    visitedInodes := make(map[scanner.FileID]struct{})
+                    return m, tea.Batch(
+                        m.spinner.Tick,
+                        refreshDirectoryCmd(m.currentNode.Path, m.filesScanned, visitedInodes, m.currentExclusions),
+                    )
+                }
+                return m, nil
 
-			case "left":
-				if m.currentNode.Parent != nil {
-					m.currentNode = m.currentNode.Parent
-					m.cursor = 0
-					m.yOffset = 0
-					m.applySort()
-				}
-				return m, nil
+            case "left":
+                if m.currentNode.Parent != nil {
+                    m.currentNode = m.currentNode.Parent
+                    m.cursor = 0
+                    m.yOffset = 0
+                    m.applySort()
+                }
+                return m, nil
 
-			case "backspace", "esc":
-				m.state = StateInputPath
-				m.focusIndex = 0
-				m.pathInput.Focus()
-				m.excludeInput.Blur()
-				return m, nil
+            case "backspace", "esc":
+                m.state = StateInputPath
+                m.focusIndex = 0
+                m.pathInput.Focus()
+                m.excludeInput.Blur()
+                return m, nil
 
-			case "enter", "right", "l":
-				if len(items) > 0 && m.cursor < len(items) {
-					selected := items[m.cursor]
-					if selected.Name == ".." {
-						if m.currentNode.Parent != nil {
-							m.currentNode = m.currentNode.Parent
-							m.cursor = 0
-							m.yOffset = 0
-							m.applySort()
-						}
-						return m, nil
-					}
-					if selected.Name == "." {
-						return m, nil
-					}
-					if selected.IsDir {
-						for _, child := range m.currentNode.Children {
-							if child.Path == selected.Path {
-								m.currentNode = child
-								m.cursor = 0
-								m.yOffset = 0
-								m.applySort()
-								break
-							}
-						}
-					}
-				}
+            case "enter", "right", "l":
+                if len(items) > 0 && m.cursor < len(items) {
+                    selected := items[m.cursor]
+                    if selected.Name == ".." {
+                        if m.currentNode.Parent != nil {
+                            m.currentNode = m.currentNode.Parent
+                            m.cursor = 0
+                            m.yOffset = 0
+                            m.applySort()
+                        }
+                        return m, nil
+                    }
+                    if selected.Name == "." {
+                        return m, nil
+                    }
+                    if selected.IsDir {
+                        for _, child := range m.currentNode.Children {
+                            if child.Path == selected.Path {
+                                m.currentNode = child
+                                m.cursor = 0
+                                m.yOffset = 0
+                                m.applySort()
+                                break
+                            }
+                        }
+                    }
+                }
 
-			case "g":
-				if len(items) > 0 && m.cursor < len(items) {
-					selected := items[m.cursor]
-					cmd := exec.Command("xdg-open", selected.Path)
-					cmd.Start()
-				}
-				return m, nil
+            case "g":
+                if len(items) > 0 && m.cursor < len(items) {
+                    selected := items[m.cursor]
+                    cmd := exec.Command("xdg-open", selected.Path)
+                    cmd.Start()
+                }
+                return m, nil
 
-			case "b":
-				if len(items) > 0 && m.cursor < len(items) {
-					selected := items[m.cursor]
-					targetPath := selected.Path
-					if !selected.IsDir {
-						targetPath = filepath.Dir(selected.Path)
-					}
-					shell := os.Getenv("SHELL")
-					if shell == "" {
-						shell = "/bin/bash"
-					}
-					c := exec.Command(shell)
-					c.Dir = targetPath
-					return m, tea.ExecProcess(c, func(err error) tea.Msg { return nil })
-				}
-				return m, nil
+            case "b":
+                if len(items) > 0 && m.cursor < len(items) {
+                    selected := items[m.cursor]
+                    targetPath := selected.Path
+                    if !selected.IsDir {
+                        targetPath = filepath.Dir(selected.Path)
+                    }
+                    shell := os.Getenv("SHELL")
+                    if shell == "" {
+                        shell = "/bin/bash"
+                    }
+                    c := exec.Command(shell)
+                    c.Dir = targetPath
+                    return m, tea.ExecProcess(c, func(err error) tea.Msg { return nil })
+                }
+                return m, nil
 
-			case "up", "k":
-				if m.cursor > 0 {
-					m.cursor--
-					if m.cursor < m.yOffset {
-						m.yOffset = m.cursor
-					}
-				}
-			case "down", "j":
-				if m.cursor < len(items)-1 {
-					m.cursor++
-					footerHeight := 2
-					if !m.showHelp {
-						footerHeight = 0
-					}
-					visibleHeight := m.height - 5 - footerHeight
-					if m.cursor >= m.yOffset+visibleHeight {
-						m.yOffset = m.cursor - visibleHeight + 1
-					}
-				}
-			}
-		}
+            case "up", "k":
+                if m.cursor > 0 {
+                    m.cursor--
+                    if m.cursor < m.yOffset {
+                        m.yOffset = m.cursor
+                    }
+                }
+            case "down", "j":
+                if m.cursor < len(items)-1 {
+                    m.cursor++
+                    footerHeight := 2
+                    if !m.showHelp {
+                        footerHeight = 0
+                    }
+                    visibleHeight := m.height - 5 - footerHeight
+                    if m.cursor >= m.yOffset+visibleHeight {
+                        m.yOffset = m.cursor - visibleHeight + 1
+                    }
+                }
+            }
+        }
 
-	case scanFinishedMsg:
-		if msg.err != nil {
-			m.err = msg.err
-			m.state = StateInputPath
-		} else {
-			m.root = msg.root
-			m.currentNode = msg.root
-			m.diskTotalSize = msg.diskSize
-			m.state = StateBrowsing
-			m.applySort()
-		}
+    case scanFinishedMsg:
+        if msg.err != nil {
+            m.err = msg.err
+            m.state = StateInputPath
+        } else {
+            m.root = msg.root
+            m.currentNode = msg.root
+            m.diskTotalSize = msg.diskSize
+            m.state = StateBrowsing
+            m.applySort()
+        }
 
-	case refreshFinishedMsg:
-		if msg.err != nil {
-			m.err = msg.err
-			m.state = StateBrowsing
-		} else {
-			newNode := msg.newNode
-			oldNode := m.currentNode
+    case refreshFinishedMsg:
+        if msg.err != nil {
+            m.err = msg.err
+            m.state = StateBrowsing
+        } else {
+            newNode := msg.newNode
+            oldNode := m.currentNode
 
-			// Mise à jour de l'arbre existant avec les nouvelles données
-			if oldNode.Parent != nil {
-				newNode.Parent = oldNode.Parent
-				newNode.Name = filepath.Base(newNode.Path)
-				for i, child := range oldNode.Parent.Children {
-					if child.Path == oldNode.Path {
-						oldNode.Parent.Children[i] = newNode
-						break
-					}
-				}
-				diff := newNode.Size - oldNode.Size
-				parent := newNode.Parent
-				for parent != nil {
-					parent.Size += diff
-					parent = parent.Parent
-				}
-			} else {
-				m.root = newNode
-			}
+            if oldNode.Parent != nil {
+                newNode.Parent = oldNode.Parent
+                newNode.Name = filepath.Base(newNode.Path)
+                for i, child := range oldNode.Parent.Children {
+                    if child.Path == oldNode.Path {
+                        oldNode.Parent.Children[i] = newNode
+                        break
+                    }
+                }
+                diff := newNode.Size - oldNode.Size
+                parent := newNode.Parent
+                for parent != nil {
+                    parent.Size += diff
+                    parent = parent.Parent
+                }
+            } else {
+                m.root = newNode
+            }
 
-			m.currentNode = newNode
-			if m.cursor >= len(m.getDisplayItems()) {
-				m.cursor = 0
-				m.yOffset = 0
-			}
-			m.state = StateBrowsing
-			m.applySort()
-		}
+            m.currentNode = newNode
+            if m.cursor >= len(m.getDisplayItems()) {
+                m.cursor = 0
+                m.yOffset = 0
+            }
+            m.state = StateBrowsing
+            m.applySort()
+        }
 
-	case spinner.TickMsg:
-		if m.state == StateScanning {
-			var cmdSpinner tea.Cmd
-			m.spinner, cmdSpinner = m.spinner.Update(msg)
-			return m, cmdSpinner
-		}
-	}
+    case spinner.TickMsg:
+        if m.state == StateScanning {
+            var cmdSpinner tea.Cmd
+            m.spinner, cmdSpinner = m.spinner.Update(msg)
+            return m, cmdSpinner
+        }
+    }
 
-	return m, nil
+    return m, nil
 }
 
-// Helper pour savoir s'il faut ajouter un slash
+// Helper pour déterminer si un slash doit être ajouté au chemin (pour les dossiers)
 func isDirOrShouldSlash(name string) bool {
-	return strings.HasSuffix(name, string(os.PathSeparator))
+    return strings.HasSuffix(name, string(os.PathSeparator))
 }
 
-// Commande Tea pour lancer le scan complet
 func scanDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
-	return func() tea.Msg {
-		diskSize := scanner.GetPartitionSize(path)
-		root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
-		return scanFinishedMsg{root: root, diskSize: diskSize, err: err}
-	}
+    return func() tea.Msg {
+        diskSize := scanner.GetPartitionSize(path)
+        root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
+        return scanFinishedMsg{root: root, diskSize: diskSize, err: err}
+    }
 }
 
-// Commande Tea pour rafraîchir uniquement un sous-dossier
 func refreshDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
-	return func() tea.Msg {
-		root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
-		return refreshFinishedMsg{newNode: root, err: err}
-	}
+    return func() tea.Msg {
+        root, err := scanner.ScanRecursively(path, nil, counter, visited, exclusions)
+        return refreshFinishedMsg{newNode: root, err: err}
+    }
 }

@@ -7,12 +7,14 @@ import (
 	"strings"
 )
 
+// Analyse le chemin en cours de saisie pour proposer des complétions basées sur le contenu du disque
+// Gère l'expansion du tilde (~) et filtre selon le préfixe déjà tapé
 func GetAutocompleteSuggestions(currentPath string, onlyDirs bool) (string, []string) {
-	// 1. Gestion du tilde (~)
-	expanded := currentPath
+	expanded := os.ExpandEnv(currentPath)
 	home, _ := os.UserHomeDir()
 	usedTilde := false
 
+	// Gestion de l'expansion du répertoire home (~)
 	if strings.HasPrefix(currentPath, "~") {
 		usedTilde = true
 		if currentPath == "~" {
@@ -22,24 +24,22 @@ func GetAutocompleteSuggestions(currentPath string, onlyDirs bool) (string, []st
 		}
 	}
 
-	// 2. Séparer le dossier parent et le début du fichier en cours de frappe
+	// Séparation du dossier parent et du début du fichier en cours de frappe
 	dir, filePrefix := filepath.Split(expanded)
-	
-	// Si on tape juste un nom sans /, on est dans le dossier courant
+
 	if dir == "" {
 		dir = "."
 	}
 
-	// 3. Lire le contenu du dossier
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return "", nil
 	}
 
-	// 4. Trouver les candidats
+	// Filtrage des candidats correspondant au préfixe
 	var candidates []string
 	for _, entry := range entries {
-		// Ignore les fichiers cachés sauf si on a tapé un "."
+		// On ignore les fichiers cachés sauf si l'utilisateur a explicitement tapé un point
 		if strings.HasPrefix(entry.Name(), ".") && !strings.HasPrefix(filePrefix, ".") {
 			continue
 		}
@@ -61,12 +61,11 @@ func GetAutocompleteSuggestions(currentPath string, onlyDirs bool) (string, []st
 		return "", nil
 	}
 
-	// On trie pour que l'ordre soit logique (alphabétique)
 	sort.Strings(candidates)
 
-	// 5. Reconstruction du préfixe de retour
+	// Reconstruction du chemin de base pour l'affichage (réintégration du tilde si utilisé)
 	baseToReturn := dir
-	
+
 	if usedTilde {
 		if strings.HasPrefix(dir, home) {
 			rel, err := filepath.Rel(home, dir)

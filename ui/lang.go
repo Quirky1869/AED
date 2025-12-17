@@ -1,6 +1,6 @@
 package ui
 
-// Nouvelle structure pour découper l'aide
+// Structure pour découper l'aide
 type HelpItem struct {
 	Key  string
 	Desc string
@@ -32,7 +32,8 @@ type Language struct {
 	SortName  string
 	SortCount string
 
-	// Modification : On utilise des tableaux structurés au lieu de strings
+	HiddenFilesLabel string
+
 	HelpFooterShort [][]HelpItem
 	HelpFooterFull  [][]HelpItem
 }
@@ -44,14 +45,13 @@ var fr = Language{
 	Title:                "AED - Analyseur d'Espace Disque",
 	PathLabelActive:      "Entrez le dossier à analyser :",
 	PathLabelInactive:    "Entrez le dossier à analyser :",
-	PathPlaceholder:      "/home/user (ou ~)",
+	PathPlaceholder:      "/home/user (ou ~) (ou $HOME)",
 	ExcludeLabelActive:   "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludeLabelInactive: "Exclure (fichiers/dossiers, sép. par virgules) :",
-	ExcludePlaceholder:   "node_modules, .git, *.tmp",
+	ExcludePlaceholder:   "/home, node_modules, .git, *.tmp",
+	HiddenFilesLabel: "Fichiers cachés",
 
-	// --- MODIFICATION ICI ---
 	HelpInput: "(tab: compléter • ↑/↓: options • enter: valider • esc: quitter)",
-	// ------------------------
 
 	ScanningTitle: "Analyse en cours...",
 	FilesScanned:  "fichiers scannés",
@@ -66,7 +66,6 @@ var fr = Language{
 	SortName:  "Nom",
 	SortCount: "Éléments",
 
-	// Footer Court (1 ligne)
 	HelpFooterShort: [][]HelpItem{
 		{
 			{"?", "aide"},
@@ -76,7 +75,6 @@ var fr = Language{
 		},
 	},
 
-	// Footer Complet (3 lignes)
 	HelpFooterFull: [][]HelpItem{
 		{
 			{"?", "réduire aide"},
@@ -108,14 +106,14 @@ var en = Language{
 	Title:                "DSA - Disk Space Analyzer",
 	PathLabelActive:      "Enter directory to analyze:",
 	PathLabelInactive:    "Enter directory to analyze:",
-	PathPlaceholder:      "/home/user (or ~)",
+	PathPlaceholder:      "/home/user (or ~) (or $HOME)",
 	ExcludeLabelActive:   "Exclude (files/folders, comma sep.):",
 	ExcludeLabelInactive: "Exclude (files/folders, comma sep.):",
-	ExcludePlaceholder:   "node_modules, .git, *.tmp",
+	ExcludePlaceholder:   "/home, node_modules, .git, *.tmp",
+	HiddenFilesLabel: "Hidden files",
 
-	// --- MODIFICATION ICI ---
 	HelpInput: "(tab: autocomplete • ↑/↓: options • enter: confirm • esc: quit)",
-	// ------------------------
+
 
 	ScanningTitle: "Scanning in progress...",
 	FilesScanned:  "files scanned",

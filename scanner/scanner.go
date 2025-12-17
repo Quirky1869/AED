@@ -9,23 +9,24 @@ import (
 	"syscall"
 )
 
-// Identifiant unique pour dédupliquer les fichiers (hardlinks)
+// Identifiant unique pour dédupliquer les fichiers (gestion des hardlinks)
 type FileID struct {
 	Dev uint64
 	Ino uint64
 }
 
-// Structure de l'arbre de fichiers
+// Représentation d'un nœud dans l'arborescence (Fichier ou Dossier)
 type FileNode struct {
-	Name     string
-	Path     string
-	Size     int64
-	IsDir    bool
-	Children []*FileNode
-	Parent   *FileNode
+	Name      string
+	Path      string
+	Size      int64
+	FileCount int64 // Nombre total de fichiers contenus (pour les dossiers)
+	IsDir     bool
+	Children  []*FileNode
+	Parent    *FileNode
 }
 
-// Parcourt le disque récursivement, calcule les tailles et ignore les motifs exclus
+// Parcourt le disque récursivement, calcule les tailles et le nombre de fichiers
 func ScanRecursively(path string, parent *FileNode, counter *int64, visited map[FileID]struct{}, exclusions []string) (*FileNode, error) {
 	atomic.AddInt64(counter, 1)
 
@@ -52,11 +53,12 @@ func ScanRecursively(path string, parent *FileNode, counter *int64, visited map[
 	}
 
 	var totalSize int64
+	var totalCount int64
 
 	for _, entry := range entries {
 		childPath := filepath.Join(absPath, entry.Name())
 
-		// Vérification des exclusions (nom court ou chemin complet)
+		// Vérification des motifs d'exclusion
 		isExcluded := false
 		for _, pattern := range exclusions {
 			if matched, _ := filepath.Match(pattern, entry.Name()); matched {
@@ -77,22 +79,18 @@ func ScanRecursively(path string, parent *FileNode, counter *int64, visited map[
 			continue
 		}
 
-		// Protection contre les boucles infinies dans les dossiers virtuels Linux
-		if node.Path == "/" && (entry.Name() == "proc" || entry.Name() == "sys" || entry.Name() == "dev" || entry.Name() == "run") {
-			continue
-		}
-
 		if entry.IsDir() {
+			// Appel récursif pour les sous-dossiers
 			childNode, _ := ScanRecursively(childPath, node, counter, visited, exclusions)
 			if childNode != nil {
 				node.Children = append(node.Children, childNode)
 				totalSize += childNode.Size
+				totalCount += (1 + childNode.FileCount) // On compte le dossier + son contenu
 			}
 		} else {
 			atomic.AddInt64(counter, 1)
 
 			var size int64
-			// Calcul de la taille réelle sur le disque (blocks) et gestion des hardlinks
 			if stat, ok := info.Sys().(*syscall.Stat_t); ok {
 				size = stat.Blocks * 512
 				id := FileID{Dev: stat.Dev, Ino: stat.Ino}
@@ -106,19 +104,22 @@ func ScanRecursively(path string, parent *FileNode, counter *int64, visited map[
 			}
 
 			child := &FileNode{
-				Name:   entry.Name(),
-				Path:   childPath,
-				Size:   size,
-				IsDir:  false,
-				Parent: node,
+				Name:      entry.Name(),
+				Path:      childPath,
+				Size:      size,
+				FileCount: 1,
+				IsDir:     false,
+				Parent:    node,
 			}
 			node.Children = append(node.Children, child)
+			totalCount++
 		}
 	}
 
 	node.Size = totalSize
+	node.FileCount = totalCount
 
-	// Tri par défaut : du plus gros au plus petit
+	// Tri par défaut : Taille décroissante
 	sort.Slice(node.Children, func(i, j int) bool {
 		return node.Children[i].Size > node.Children[j].Size
 	})
@@ -126,7 +127,7 @@ func ScanRecursively(path string, parent *FileNode, counter *int64, visited map[
 	return node, nil
 }
 
-// Récupère la taille totale de la partition (pour afficher le pourcentage d'occupation)
+// Retourne la taille totale de la partition disque
 func GetPartitionSize(path string) int64 {
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(path, &stat); err != nil {
@@ -135,8 +136,9 @@ func GetPartitionSize(path string) int64 {
 	return int64(stat.Blocks) * int64(stat.Bsize)
 }
 
-// Convertit le tilde (~) en chemin absolu vers le home directory
+// Remplace le tilde (~) par le chemin complet du dossier utilisateur
 func ExpandPath(path string) string {
+	path = os.ExpandEnv(path)
 	if strings.HasPrefix(path, "~") {
 		home, err := os.UserHomeDir()
 		if err != nil {

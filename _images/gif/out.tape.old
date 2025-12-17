@@ -4,7 +4,7 @@ Set FontSize 40
 Set Theme "Cobalt Neon"
 Set WindowBar Colorful
 Set BorderRadius 20
-Set Width 1900
+Set Width 1250
 Set Height 750
 
 Sleep 1s 
@@ -13,14 +13,14 @@ Enter
 Sleep 2s
 
 Type "./bin/aed"
-Sleep 4s
+Sleep 2s
 Enter
 
 Backspace
 Sleep 1s
 
 Type "/"
-Sleep 3s
+Sleep 1s
 
 Enter
-Sleep 10s
+Sleep 4s

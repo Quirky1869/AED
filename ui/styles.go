@@ -25,6 +25,9 @@ var (
 	// Couleur du type de tri
 	sortStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#ffe600"))
 
+	// Couleur de l'indicateur des fichiers cachés
+	hiddenStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ffe600"))
+
 	// Couleur de la ligne sélectionnée
 	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("#2b2b2b")).Bold(true)
 
@@ -33,6 +36,9 @@ var (
 
 	// Couleur si la taille du dossier est vide/petite ( ----- )
 	barEmpty = lipgloss.NewStyle().Foreground(lipgloss.Color("#444444"))
+
+	// Couleur du nombre d'éléments/items présent dans un dossier
+	fileCountStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff"))
 
 	// Couleur pour la description de l'aide
 	helpKeyStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00f6ff"))
