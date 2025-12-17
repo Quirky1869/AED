@@ -1,4 +1,4 @@
-# AED
+#AED
 
 ![](./_images/aed.jpeg)
 
@@ -37,7 +37,7 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 > - b: Opens a shell (terminal) directly in the selected folder
 > - g: Opens the folder or file in the OS graphical explorer (xdg-open)
 > - r: Allows you to re-scan the current folder
-> - ctrl+l: Allows you to switch the language between French :fr: and English :gb:
+> - ctrl+l: Allows you to switch the language between French:fr: and English:gb:
 > - s: Sort by size (Ascending/Descending)
 > - n: Sort by name (Ascending/Descending)
 > - C: Sort by number of elements (Ascending/Descending)
@@ -56,9 +56,9 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 └── ui/
 ├── autocomplete.go # Autocompletion file (Tab)
 ├── lang.go # Language file (FR, EN)
+├── model.go # Structure Model, Update() and Init()
 ├── styles.go # Lipgloss Styles
-├── view.go # View() function and formatting
-└── model.go # Structure Model, Update() and Init()
+└── view.go # View() function and formatting
 ```
 
 ## Releases
@@ -74,7 +74,7 @@ You can change the interface colors from the `ui/styles.go` file
 <details>
 <summary style="font-weight: bold; color: #500aff;">ui/styles.go (Click to expand)</summary>
 
-### Directory selection and exclusions
+### File selection and exclusions
 
 <img src="./_images/DSA1.png" alt="DSA1">
 
@@ -103,6 +103,8 @@ You can change the interface colors from the `ui/styles.go` file
 > - 7 = barEmpty
 > - 8 = helpKeyStyle
 > - 9 = helpDescStyle
+> - 10 = hiddenStyle
+> - 11 = fileCountStyle
 
 </details>
 
