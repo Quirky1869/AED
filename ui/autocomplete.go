@@ -8,7 +8,7 @@ import (
 )
 
 // Analyse le chemin en cours de saisie pour proposer des complétions basées sur le contenu du disque
-// Gère l'expansion du tilde (~) et filtre selon le préfixe déjà tapé
+// Gère l'expansion du tilde (~)
 func GetAutocompleteSuggestions(currentPath string, onlyDirs bool) (string, []string) {
 	expanded := os.ExpandEnv(currentPath)
 	home, _ := os.UserHomeDir()

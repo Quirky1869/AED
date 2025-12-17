@@ -46,6 +46,7 @@ var fr = Language{
 	PathLabelActive:      "Entrez le dossier à analyser :",
 	PathLabelInactive:    "Entrez le dossier à analyser :",
 	PathPlaceholder:      "/home/user (ou ~) (ou $HOME)",
+
 	ExcludeLabelActive:   "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludeLabelInactive: "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludePlaceholder:   "/home, node_modules, .git, *.tmp",
