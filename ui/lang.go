@@ -78,7 +78,7 @@ var fr = Language{
 	HelpFooterFull: [][]HelpItem{
 		{
 			{"?", "réduire aide"},
-			{"↑/↓/←/→", "naviguer"},
+			{"↑j/↓k/←h/→l", "naviguer"},
 			{"enter", "sélectionner"},
 			{"esc", "revenir menu"},
 			{"q", "quitter"},
@@ -140,7 +140,7 @@ var en = Language{
 	HelpFooterFull: [][]HelpItem{
 		{
 			{"?", "less help"},
-			{"↑/↓/←/→", "nav"},
+			{"↑j/↓k/←h/→l", "nav"},
 			{"enter", "select"},
 			{"esc", "back menu"},
 			{"q", "quit"},
