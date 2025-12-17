@@ -1,6 +1,6 @@
 # AED
 
-![](./_images/aed.jpeg)  
+![](./_images/aed.png)  
 
 ![Static Badge](https://img.shields.io/badge/TUI-AED-gold?style=plastic)
 ![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)
