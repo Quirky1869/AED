@@ -356,7 +356,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
                 m.showHelp = !m.showHelp
                 return m, nil
 
-            case "h":
+            case "e":
                 m.showHidden = !m.showHidden
                 newItems := m.getDisplayItems()
                 if m.cursor >= len(newItems) {
@@ -416,7 +416,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
                 }
                 return m, nil
 
-            case "left":
+            case "left", "h":
                 if m.currentNode.Parent != nil {
                     m.currentNode = m.currentNode.Parent
                     m.cursor = 0

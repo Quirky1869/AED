@@ -87,7 +87,7 @@ var fr = Language{
 			{"g", "explorer"},
 			{"b", "shell"},
 			{"r", "recalculer"},
-			{"h", "fichiers cachés"},
+			{"e", "fichiers cachés"},
 			{"ctrl+l", "langue"},
 		},
 		{
@@ -149,7 +149,7 @@ var en = Language{
 			{"g", "explore"},
 			{"b", "shell"},
 			{"r", "refresh"},
-			{"h", "hidden files"},
+			{"e", "hidden files"},
 			{"ctrl+l", "lang"},
 		},
 		{

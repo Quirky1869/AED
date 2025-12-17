@@ -41,7 +41,7 @@ Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/�
 > - s : Trier par taille (Ascendant/Descendant)
 > - n : Trier par nom (Ascendant/Descendant)
 > - C : Trier par nombre d'éléments (Ascendant/Descendant)
-> - h : Afficher ou masquer les fichiers cachés
+> - e : Afficher ou masquer les fichiers cachés
 
 ## Structure du projet
 
