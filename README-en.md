@@ -1,6 +1,6 @@
-# AED
+#AED
 
-![](./_images/aed.jpeg)
+![](./_images/aed.png)
 
 ![Static Badge](https://img.shields.io/badge/TUI-AED-gold?style=plastic)
 ![Static Badge](https://img.shields.io/badge/License-MIT-500aff?style=plastic)
@@ -37,7 +37,7 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 > - b: Opens a shell (terminal) directly in the selected folder
 > - g: Opens the folder or file in the OS graphical explorer (xdg-open)
 > - r: Allows you to re-scan the current folder
-> - ctrl+l: Allows you to switch the language between French :fr: and English :gb:
+> - ctrl+l: Allows you to switch the language between French:fr: and English:gb:
 > - s: Sort by size (Ascending/Descending)
 > - n: Sort by name (Ascending/Descending)
 > - C: Sort by number of elements (Ascending/Descending)
@@ -74,7 +74,7 @@ You can change the interface colors from the `ui/styles.go` file
 <details>
 <summary style="font-weight: bold; color: #500aff;">ui/styles.go (Click to expand)</summary>
 
-### Directory selection and exclusions
+### File selection and exclusions
 
 <img src="./_images/DSA1.png" alt="DSA1">
 
@@ -90,7 +90,7 @@ You can change the interface colors from the `ui/styles.go` file
 > - 2 = countStyle
 > - 3 = helpDescStyle
 
-### DSA
+### AED
 
 <img src="./_images/DSA3.png" alt="DSA3">
 
