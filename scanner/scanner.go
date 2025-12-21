@@ -39,7 +39,6 @@ func (n *FileNode) FullPath() string {
 		curr = curr.Parent
 	}
 	full := filepath.Join(parts...)
-	// Hack pour Linux si la racine est "/"
 	if len(parts) > 0 && parts[0] == "/" && !strings.HasPrefix(full, "/") {
 		full = "/" + full
 	}
@@ -117,8 +116,6 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 				continue
 			}
 
-			// --- PARALLÉLISME INTELLIGENT ---
-			// On essaie d'acquérir un slot CPU. Si occupé, on fait le travail nous-même.
 			wg.Add(1)
 			
 			// Fonction de traitement d'un sous-dossier
@@ -136,28 +133,25 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 
 			select {
 			case semaphore <- struct{}{}:
-				// Slot libre : on lance une goroutine
 				go func(cp string) {
-					defer func() { <-semaphore }() // Libérer le slot à la fin
+					defer func() { <-semaphore }()
 					scanSubDir(cp)
 				}(childPath)
 			default:
-				// Tous les cœurs sont occupés : on scanne sur le thread actuel (Séquentiel)
 				scanSubDir(childPath)
 			}
 
 		} else {
-			// --- TRAITEMENT FICHIER OPTIMISÉ ---
 			atomic.AddInt64(counter, 1)
 			
-			info, err := entry.Info() // Syscall lstat
+			info, err := entry.Info()
 			if err != nil {
 				continue
 			}
 
 			var size int64
 			
-			// OPTIMISATION MAJEURE : On ne vérifie les hardlinks que si Nlink > 1
+			// On ne vérifie les hardlinks que si Nlink > 1
 			if stat, ok := info.Sys().(*syscall.Stat_t); ok {
 				size = stat.Blocks * 512
 				
@@ -204,7 +198,7 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 	node.Size = totalSize
 	node.FileCount = totalCount
 
-	// Tri final (CPU bound, mais rapide en RAM)
+	// Tri final
 	sort.Slice(node.Children, func(i, j int) bool {
 		return node.Children[i].Size > node.Children[j].Size
 	})
