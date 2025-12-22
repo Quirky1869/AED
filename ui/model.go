@@ -15,7 +15,7 @@ import (
 	"aed/scanner"
 )
 
-// Messages internes
+// Messages internes pour la communication asynchrone (fin de scan, refresh)
 type BackMsg struct{}
 
 type refreshFinishedMsg struct {
@@ -29,7 +29,7 @@ type scanFinishedMsg struct {
 	err      error
 }
 
-// États
+// États de la machine à états de l'interface
 type SessionState int
 
 const (
@@ -38,7 +38,7 @@ const (
 	StateBrowsing
 )
 
-// Modes de tri
+// Modes de tri disponibles pour l'affichage des fichiers
 type SortMode int
 
 const (
@@ -47,7 +47,7 @@ const (
 	SortByCount
 )
 
-// Modèle principal
+// Modèle principal contenant l'état de l'application, les données et la configuration UI
 type Model struct {
 	state        SessionState
 	pathInput    textinput.Model
@@ -80,6 +80,7 @@ type Model struct {
 	err           error
 }
 
+// Initialisation du modèle avec les valeurs par défaut
 func New(w, h int) Model {
 	currentLang := fr
 
@@ -123,6 +124,7 @@ func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Trie les enfants du nœud courant selon le mode sélectionné (Taille, Nom, Nombre)
 func (m *Model) applySort() {
 	if m.currentNode == nil || len(m.currentNode.Children) == 0 {
 		return
@@ -149,6 +151,7 @@ func (m *Model) applySort() {
 	})
 }
 
+// Boucle principale de gestion des événements
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -166,6 +169,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg { return BackMsg{} }
 		}
 
+		// Bascule de la langue (FR <-> EN)
 		if msg.String() == "ctrl+l" {
 			if m.lang.Code == "FR" {
 				m.lang = en
@@ -177,9 +181,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Gestion de l'écran de saisie (Input)
 		if m.state == StateInputPath {
 			switch msg.String() {
 
+			// Gestion de l'autocomplétion (Tab)
 			case "tab":
 				var activeInput *textinput.Model
 				isExcludeField := false
@@ -191,6 +197,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					isExcludeField = true
 				}
 
+				// Initialisation du cycle de suggestions
 				if len(m.suggestions) == 0 {
 					fullText := activeInput.Value()
 					searchStr := fullText
@@ -221,6 +228,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						activeInput.SetCursor(len(newValue))
 					}
 				} else {
+					// Cycle suivant
 					m.suggestionIndex = (m.suggestionIndex + 1) % len(m.suggestions)
 					candidate := m.suggestions[m.suggestionIndex]
 					newValue := m.suggestionBase + candidate
@@ -232,6 +240,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
+			// Gestion de l'autocomplétion inverse (Shift+Tab)
 			case "shift+tab":
 				if len(m.suggestions) > 0 {
 					var activeInput *textinput.Model
@@ -253,12 +262,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					activeInput.SetCursor(len(newValue))
 					return m, nil
 				}
+				// Sinon navigation champ précédent
 				m.suggestions = nil
 				m.focusIndex = 0
 				m.excludeInput.Blur()
 				m.pathInput.Focus()
 				return m, textinput.Blink
 
+			// Navigation entre les champs
 			case "up":
 				m.suggestions = nil
 				m.focusIndex = 0
@@ -273,6 +284,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.excludeInput.Focus()
 				return m, textinput.Blink
 
+			// Validation et lancement du scan
 			case "enter":
 				m.suggestions = nil
 				rawInput := m.pathInput.Value()
@@ -319,16 +331,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		// Gestion de l'état Scanning
 		if m.state == StateScanning {
 			if msg.String() == "q" || msg.String() == "esc" {
 				return m, func() tea.Msg { return BackMsg{} }
 			}
 		}
 
+		// Gestion de l'état Browsing (Navigation dans les résultats)
 		if m.state == StateBrowsing {
 			items := m.getDisplayItems()
 
-			// Calcul de la hauteur visible
 			footerHeight := 2
 			if !m.showHelp {
 				footerHeight = 0
@@ -345,6 +358,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showHelp = !m.showHelp
 				return m, nil
 
+			// Affichage / Masquage des fichiers cachés
 			case "e":
 				m.showHidden = !m.showHidden
 				newItems := m.getDisplayItems()
@@ -359,6 +373,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
+			// Options de tri (Taille, Nom, Nombre)
 			case "s":
 				if m.sortMode == SortBySize {
 					m.sortDesc = !m.sortDesc
@@ -389,6 +404,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.applySort()
 				return m, nil
 
+			// Rafraîchir le dossier courant
 			case "r":
 				if m.currentNode != nil {
 					m.state = StateScanning
@@ -401,6 +417,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
+			// Navigation hiérarchique (Parent/Enfant)
 			case "left", "h":
 				if m.currentNode.Parent != nil {
 					m.currentNode = m.currentNode.Parent
@@ -434,7 +451,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 					if selected.IsDir {
 						for _, child := range m.currentNode.Children {
-							// Comparaison par nom
 							if child.Name == selected.Name {
 								m.currentNode = child
 								m.cursor = 0
@@ -446,10 +462,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
+			// Actions système (Ouvrir, Shell)
 			case "g":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
-					// Utilisation de FullPath()
 					cmd := exec.Command("xdg-open", selected.FullPath())
 					cmd.Start()
 				}
@@ -458,7 +474,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "b":
 				if len(items) > 0 && m.cursor < len(items) {
 					selected := items[m.cursor]
-					// Utilisation de FullPath()
 					targetPath := selected.FullPath()
 					if !selected.IsDir {
 						targetPath = filepath.Dir(targetPath)
@@ -473,6 +488,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 
+			// Navigation verticale (Curseur)
 			case "up", "k":
 				if m.cursor > 0 {
 					m.cursor--
@@ -488,6 +504,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
+			// Navigation rapide (Home, End, PageUp, PageDown)
 			case "home":
 				m.cursor = 0
 				m.yOffset = 0
@@ -523,6 +540,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+	// Gestion des messages asynchrones (Fin de scan, Refresh)
 	case scanFinishedMsg:
 		if msg.err != nil {
 			m.err = msg.err
@@ -543,16 +561,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			newNode := msg.newNode
 			oldNode := m.currentNode
 
+			// Greffe du nouveau nœud scanné dans l'arbre existant
 			if oldNode.Parent != nil {
 				newNode.Parent = oldNode.Parent
-				newNode.Name = filepath.Base(newNode.FullPath()) // FullPath pour sécurité
+				newNode.Name = filepath.Base(newNode.FullPath())
 				for i, child := range oldNode.Parent.Children {
-					// Comparaison par nom
 					if child.Name == oldNode.Name {
 						oldNode.Parent.Children[i] = newNode
 						break
 					}
 				}
+				// Mise à jour de la taille totale des parents
 				diff := newNode.Size - oldNode.Size
 				parent := newNode.Parent
 				for parent != nil {
@@ -583,18 +602,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// Helper pour déterminer si un slash final est nécessaire pour l'autocomplétion
 func isDirOrShouldSlash(name string) bool {
 	return strings.HasSuffix(name, string(os.PathSeparator))
 }
 
+// Commande pour lancer le scan complet d'un répertoire
 func scanDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
 	return func() tea.Msg {
-		// Appel au scanner simplifié
 		root, diskSize, err := scanner.Scan(path, exclusions, counter)
 		return scanFinishedMsg{root: root, diskSize: diskSize, err: err}
 	}
 }
 
+// Commande pour rafraîchir un sous-répertoire spécifique
 func refreshDirectoryCmd(path string, counter *int64, visited map[scanner.FileID]struct{}, exclusions []string) tea.Cmd {
 	return func() tea.Msg {
 		root, _, err := scanner.Scan(path, exclusions, counter)

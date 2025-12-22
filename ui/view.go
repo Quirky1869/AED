@@ -10,11 +10,15 @@ import (
 	"aed/scanner"
 )
 
+// View génère l'affichage de l'interface utilisateur en fonction de l'état actuel
 func (m Model) View() string {
 
+	// Vue 1 : Formulaire de saisie du chemin et des exclusions
 	if m.state == StateInputPath {
 		title := titleStyle.Render(m.lang.Title)
 		var pathLabel, excludeLabel string
+
+		// Gestion du focus visuel entre les champs
 		if m.focusIndex == 0 {
 			pathLabel = helpDescStyle.Render(m.lang.PathLabelActive)
 			excludeLabel = inactiveStyle.Render(m.lang.ExcludeLabelInactive)
@@ -22,14 +26,17 @@ func (m Model) View() string {
 			pathLabel = inactiveStyle.Render(m.lang.PathLabelInactive)
 			excludeLabel = helpDescStyle.Render(m.lang.ExcludeLabelActive)
 		}
+
 		inputView := m.pathInput.View()
 		excludeView := m.excludeInput.View()
+
 		return fmt.Sprintf(
 			"\n  %s\n\n  %s\n  %s\n\n  %s\n  %s\n\n  %s",
 			title, pathLabel, inputView, excludeLabel, excludeView, helpDescStyle.Render(m.lang.HelpInput),
 		)
 	}
 
+	// Vue 2 : Spinner et progression pendant l'analyse
 	if m.state == StateScanning {
 		count := atomic.LoadInt64(m.filesScanned)
 		return fmt.Sprintf(
@@ -40,14 +47,19 @@ func (m Model) View() string {
 		)
 	}
 
+	// Vue 3 : Explorateur de fichiers (Interface principale)
 	if m.state == StateBrowsing {
 		if m.currentNode == nil {
 			return m.lang.ErrorEmpty
 		}
 
+		// Construction du header
+
 		title := titleStyle.Render(m.lang.Title)
+		// Note : Assurez-vous que FullPath() est bien défini sur FileNode ou utilisez .Path
 		path := pathStyle.Render(m.currentNode.FullPath())
 
+		// Préparation de l'affichage du mode de tri
 		var sortName string
 		switch m.sortMode {
 		case SortByName:
@@ -69,19 +81,21 @@ func (m Model) View() string {
 		}
 		sortStr := sortStyle.Render(fmt.Sprintf("[%s]", sortText))
 
-		// Indicateur Fichiers Cachés
+		// Indicateur visuel pour les fichiers cachés (Œil ou Masqué)
 		hiddenIcon := "︶"
 		if m.showHidden {
 			hiddenIcon = "👁 "
 		}
 		hiddenStr := hiddenStyle.Render(fmt.Sprintf("[%s : %s]", m.lang.HiddenFilesLabel, hiddenIcon))
 
+		// Affichage des totaux (Taille dossier courant et Taille disque)
 		totalSize := infoStyle.Render(fmt.Sprintf("(%s: %s)", m.lang.TotalLabel, formatBytes(m.currentNode.Size)))
 		var diskSizeStr string
 		if m.diskTotalSize > 0 {
 			diskSizeStr = infoStyle.Render(fmt.Sprintf("(%s: %s)", m.lang.DiskLabel, formatBytes(m.diskTotalSize)))
 		}
 
+		// Assemblage des lignes de l'en-tête avec padding
 		paddingLen := 2 + lipgloss.Width(title) + 2
 		padding := strings.Repeat(" ", paddingLen)
 
@@ -89,6 +103,8 @@ func (m Model) View() string {
 		headerLine2 := fmt.Sprintf("%s%s   %s", padding, sortStr, hiddenStr)
 
 		header := headerLine1 + "\n" + headerLine2 + "\n"
+
+		// Construction de la liste
 
 		footerHeight := 2
 		if !m.showHelp {
@@ -103,7 +119,7 @@ func (m Model) View() string {
 		var rows []string
 		items := m.getDisplayItems()
 
-		// Calcul de l'alignement
+		// Calcul de la longueur maximale des noms pour l'alignement du compteur (mode SortByCount)
 		maxNameLen := 0
 		for _, item := range items {
 			length := len(item.Name)
@@ -123,11 +139,13 @@ func (m Model) View() string {
 
 		barWidth := 20
 
+		// Boucle de rendu des lignes
 		for i := start; i < end; i++ {
 			item := items[i]
 
 			var sizeStr, bar, name string
 
+			// Gestion des cas spéciaux "." et ".."
 			if item.Name == "." || item.Name == ".." {
 				sizeStr = fmt.Sprintf("%8s", "")
 				if item.Name == "." {
@@ -136,6 +154,7 @@ func (m Model) View() string {
 				bar = strings.Repeat(" ", barWidth)
 				name = item.Name
 			} else {
+				// Élément standard
 				sizeStr = fmt.Sprintf("%8s", formatBytes(item.Size))
 
 				percent := 0.0
@@ -151,6 +170,7 @@ func (m Model) View() string {
 					name += "/"
 				}
 
+				// Affichage conditionnel du compteur d'éléments (aligné à droite)
 				if m.sortMode == SortByCount && item.IsDir {
 					currentLen := len(item.Name) + 1
 					paddingNeeded := (maxNameLen - currentLen) + 4
@@ -162,6 +182,7 @@ func (m Model) View() string {
 
 			row := fmt.Sprintf("%s  %s  %s", sizeStr, bar, name)
 
+			// Application du style de sélection
 			if i == m.cursor {
 				row = selectedStyle.Render(fmt.Sprintf("%-*s", m.width-4, row))
 			} else {
@@ -171,6 +192,8 @@ func (m Model) View() string {
 		}
 
 		content := strings.Join(rows, "\n")
+
+		// Construction du footer
 
 		var footer string
 		if m.showHelp {
@@ -185,6 +208,7 @@ func (m Model) View() string {
 	return ""
 }
 
+// renderFooter génère le pied de page d'aide avec coloration des touches
 func renderFooter(lines [][]HelpItem) string {
 	var sb strings.Builder
 	sep := helpDescStyle.Render(" • ")
@@ -209,18 +233,29 @@ func renderFooter(lines [][]HelpItem) string {
 	return sb.String()
 }
 
+// getDisplayItems prépare la liste des fichiers à afficher (ajout navigation . et ..) et filtre les cachés
 func (m Model) getDisplayItems() []*scanner.FileNode {
 	var items []*scanner.FileNode
 	if m.currentNode == nil {
 		return items
 	}
-	dot := &scanner.FileNode{Name: ".", Size: m.currentNode.Size, FileCount: m.currentNode.FileCount, IsDir: true, Parent: m.currentNode.Parent}
+	// Ajout entrée "."
+	dot := &scanner.FileNode{
+		Name:      ".",
+		Size:      m.currentNode.Size,
+		FileCount: m.currentNode.FileCount,
+		IsDir:     true,
+		Parent:    m.currentNode.Parent,
+	}
 	items = append(items, dot)
+
+	// Ajout entrée ".."
 	if m.currentNode.Parent != nil {
 		dotdot := &scanner.FileNode{Name: "..", Size: 0, IsDir: true}
 		items = append(items, dotdot)
 	}
 
+	// Ajout des enfants filtrés
 	for _, child := range m.currentNode.Children {
 		if !m.showHidden && strings.HasPrefix(child.Name, ".") {
 			continue
@@ -230,6 +265,7 @@ func (m Model) getDisplayItems() []*scanner.FileNode {
 	return items
 }
 
+// formatBytes convertit une taille en octets vers une unité lisible (TiB, GiB, etc.)
 func formatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {

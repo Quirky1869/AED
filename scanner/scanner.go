@@ -17,7 +17,7 @@ type FileID struct {
 	Ino uint64
 }
 
-// Structure allégée (sans Path)
+// Structure allégée (Sans le champ "Path" pour économiser la RAM)
 type FileNode struct {
 	Name      string
 	Size      int64
@@ -39,16 +39,18 @@ func (n *FileNode) FullPath() string {
 		curr = curr.Parent
 	}
 	full := filepath.Join(parts...)
+	// Hack pour garder le "/" initial si on est sous Unix et que la racine était "/"
 	if len(parts) > 0 && parts[0] == "/" && !strings.HasPrefix(full, "/") {
 		full = "/" + full
 	}
 	return full
 }
 
-// Sémaphore pour limiter le parallélisme au nombre de cœurs
+// Sémaphore pour limiter le parallélisme (évite de saturer l'OS)
 var maxWorkers = runtime.NumCPU() * 2
 var semaphore = make(chan struct{}, maxWorkers)
 
+// Wrapper principal
 func Scan(path string, exclusions []string, counter *int64) (*FileNode, int64, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -59,9 +61,9 @@ func Scan(path string, exclusions []string, counter *int64) (*FileNode, int64, e
 	visited := make(map[FileID]struct{})
 	var visitedMu sync.Mutex
 
-	// Lancement du scan
+	// Lancement du scan optimisé
 	root, err := scanFast(absPath, nil, counter, visited, &visitedMu, exclusions)
-	
+
 	return root, GetPartitionSize(absPath), err
 }
 
@@ -79,46 +81,46 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 		Parent: parent,
 	}
 
-	// 1. Lecture du dossier (Syscall opendir/readdir)
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return node, nil
 	}
 
-	// Pré-allocation mémoire
+	// Pré-allocation
 	node.Children = make([]*FileNode, 0, len(entries))
 
 	var (
 		totalSize  int64
 		totalCount int64
 		wg         sync.WaitGroup
-		mu         sync.Mutex // Protège l'écriture dans node.Children
+		mu         sync.Mutex
 	)
 
-	// Listes temporaires pour éviter de verrouiller 'mu' à chaque fichier
 	var localFiles []*FileNode
 	var localSize int64
 	var localCount int64
 
 	for _, entry := range entries {
-		// Exclusion rapide
+		// Calcule le chemin complet
+		childPath := filepath.Join(path, entry.Name())
+
 		if len(exclusions) > 0 {
 			if isExcluded(entry.Name(), exclusions) {
 				continue
 			}
+			if isExcluded(childPath, exclusions) {
+				continue
+			}
 		}
 
-		childPath := filepath.Join(path, entry.Name())
 
 		if entry.IsDir() {
-			// Protection boucles infinies
 			if path == "/" && (entry.Name() == "proc" || entry.Name() == "sys" || entry.Name() == "dev" || entry.Name() == "run") {
 				continue
 			}
 
 			wg.Add(1)
-			
-			// Fonction de traitement d'un sous-dossier
+
 			scanSubDir := func(cp string) {
 				defer wg.Done()
 				childNode, _ := scanFast(cp, node, counter, visited, visitedMu, exclusions)
@@ -143,29 +145,25 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 
 		} else {
 			atomic.AddInt64(counter, 1)
-			
+
 			info, err := entry.Info()
 			if err != nil {
 				continue
 			}
 
 			var size int64
-			
-			// On ne vérifie les hardlinks que si Nlink > 1
+			// Optimisation hardlinks
 			if stat, ok := info.Sys().(*syscall.Stat_t); ok {
 				size = stat.Blocks * 512
-				
-				// Si Nlink > 1, c'est potentiellement un hardlink partagé, il faut verrouiller
 				if stat.Nlink > 1 {
 					id := FileID{Dev: stat.Dev, Ino: stat.Ino}
 					visitedMu.Lock()
 					if _, seen := visited[id]; !seen {
 						visited[id] = struct{}{}
-						localSize += size // On compte la taille
+						localSize += size
 					}
 					visitedMu.Unlock()
 				} else {
-					// Cas normal (99% des fichiers) : pas de verrou, accès direct !
 					localSize += size
 				}
 			} else {
@@ -185,20 +183,17 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 		}
 	}
 
-	// Attendre que les sous-dossiers lancés en parallèle aient fini
 	wg.Wait()
 
-	// Fusionner les résultats locaux
 	mu.Lock()
 	node.Children = append(node.Children, localFiles...)
 	totalSize += localSize
 	totalCount += localCount
 	mu.Unlock()
-	
+
 	node.Size = totalSize
 	node.FileCount = totalCount
 
-	// Tri final
 	sort.Slice(node.Children, func(i, j int) bool {
 		return node.Children[i].Size > node.Children[j].Size
 	})
