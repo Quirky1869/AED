@@ -42,17 +42,17 @@ type Language struct {
 var fr = Language{
 	Code: "FR",
 
-	Title:                "AED - Analyseur d'Espace Disque",
-	PathLabelActive:      "Entrez le dossier à analyser :",
-	PathLabelInactive:    "Entrez le dossier à analyser :",
-	PathPlaceholder:      "/home/user (ou ~) (ou $HOME)",
+	Title:             "AED - Analyseur d'Espace Disque",
+	PathLabelActive:   "Entrez le dossier à analyser :",
+	PathLabelInactive: "Entrez le dossier à analyser :",
+	PathPlaceholder:   "/home/user (ou ~) (ou $HOME)",
 
 	ExcludeLabelActive:   "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludeLabelInactive: "Exclure (fichiers/dossiers, sép. par virgules) :",
 	ExcludePlaceholder:   "/home, node_modules, .git, *.tmp",
-	HiddenFilesLabel: "Fichiers cachés",
+	HiddenFilesLabel:     "Fichiers cachés",
 
-	HelpInput: "(tab: compléter • ↑/↓: options • enter: valider • esc: quitter)",
+	HelpInput: "(tab: compléter • ↑/↓: options • enter: valider • ctrl+l: langue • esc: quitter)",
 
 	ScanningTitle: "Analyse en cours...",
 	FilesScanned:  "fichiers scannés",
@@ -111,10 +111,9 @@ var en = Language{
 	ExcludeLabelActive:   "Exclude (files/folders, comma sep.):",
 	ExcludeLabelInactive: "Exclude (files/folders, comma sep.):",
 	ExcludePlaceholder:   "/home, node_modules, .git, *.tmp",
-	HiddenFilesLabel: "Hidden files",
+	HiddenFilesLabel:     "Hidden files",
 
-	HelpInput: "(tab: autocomplete • ↑/↓: options • enter: confirm • esc: quit)",
-
+	HelpInput: "(tab: autocomplete • ↑/↓: options • enter: confirm • ctrl+l: lang • esc: quit)",
 
 	ScanningTitle: "Scanning in progress...",
 	FilesScanned:  "files scanned",
