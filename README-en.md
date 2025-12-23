@@ -61,7 +61,7 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 └── view.go # View() function and formatting
 ```
 
-## Facility
+## Installation
 
 ### Go.dev
 
