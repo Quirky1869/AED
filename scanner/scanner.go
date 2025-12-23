@@ -3,123 +3,197 @@ package scanner
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 )
 
-// Identifiant unique pour dédupliquer les fichiers (gestion des hardlinks)
+// Identifiant unique pour dédupliquer les fichiers (hardlinks)
 type FileID struct {
 	Dev uint64
 	Ino uint64
 }
 
-// Représentation d'un nœud dans l'arborescence (Fichier ou Dossier)
+// Structure allégée (Sans le champ "Path" pour économiser la RAM)
 type FileNode struct {
 	Name      string
-	Path      string
 	Size      int64
-	FileCount int64 // Nombre total de fichiers contenus (pour les dossiers)
+	FileCount int64
 	IsDir     bool
 	Children  []*FileNode
 	Parent    *FileNode
 }
 
-// Parcourt le disque récursivement, calcule les tailles et le nombre de fichiers
-func ScanRecursively(path string, parent *FileNode, counter *int64, visited map[FileID]struct{}, exclusions []string) (*FileNode, error) {
-	atomic.AddInt64(counter, 1)
+// Reconstruit le chemin complet à la volée (pour l'affichage)
+func (n *FileNode) FullPath() string {
+	if n.Parent == nil {
+		return n.Name
+	}
+	parts := []string{}
+	curr := n
+	for curr != nil {
+		parts = append([]string{curr.Name}, parts...)
+		curr = curr.Parent
+	}
+	full := filepath.Join(parts...)
+	// Hack pour garder le "/" initial si on est sous Unix et que la racine était "/"
+	if len(parts) > 0 && parts[0] == "/" && !strings.HasPrefix(full, "/") {
+		full = "/" + full
+	}
+	return full
+}
 
+// Sémaphore pour limiter le parallélisme (évite de saturer l'OS)
+var maxWorkers = runtime.NumCPU() * 2
+var semaphore = make(chan struct{}, maxWorkers)
+
+// Wrapper principal
+func Scan(path string, exclusions []string, counter *int64) (*FileNode, int64, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	name := filepath.Base(absPath)
+	// Map partagée pour les hardlinks
+	visited := make(map[FileID]struct{})
+	var visitedMu sync.Mutex
+
+	// Lancement du scan optimisé
+	root, err := scanFast(absPath, nil, counter, visited, &visitedMu, exclusions)
+
+	return root, GetPartitionSize(absPath), err
+}
+
+func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]struct{}, visitedMu *sync.Mutex, exclusions []string) (*FileNode, error) {
+	atomic.AddInt64(counter, 1)
+
+	name := filepath.Base(path)
 	if parent == nil {
-		name = absPath
+		name = path
 	}
 
 	node := &FileNode{
 		Name:   name,
-		Path:   absPath,
 		IsDir:  true,
 		Parent: parent,
 	}
 
-	entries, err := os.ReadDir(absPath)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return node, nil
 	}
 
-	var totalSize int64
-	var totalCount int64
+	// Pré-allocation
+	node.Children = make([]*FileNode, 0, len(entries))
+
+	var (
+		totalSize  int64
+		totalCount int64
+		wg         sync.WaitGroup
+		mu         sync.Mutex
+	)
+
+	var localFiles []*FileNode
+	var localSize int64
+	var localCount int64
 
 	for _, entry := range entries {
-		childPath := filepath.Join(absPath, entry.Name())
+		// Calcule le chemin complet
+		childPath := filepath.Join(path, entry.Name())
 
-		// Vérification des motifs d'exclusion
-		isExcluded := false
-		for _, pattern := range exclusions {
-			if matched, _ := filepath.Match(pattern, entry.Name()); matched {
-				isExcluded = true
-				break
+		if len(exclusions) > 0 {
+			if isExcluded(entry.Name(), exclusions) {
+				continue
 			}
-			if matched, _ := filepath.Match(pattern, childPath); matched {
-				isExcluded = true
-				break
+			if isExcluded(childPath, exclusions) {
+				continue
 			}
 		}
-		if isExcluded {
-			continue
-		}
 
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
 
 		if entry.IsDir() {
-			// Appel récursif pour les sous-dossiers
-			childNode, _ := ScanRecursively(childPath, node, counter, visited, exclusions)
-			if childNode != nil {
-				node.Children = append(node.Children, childNode)
-				totalSize += childNode.Size
-				totalCount += (1 + childNode.FileCount) // On compte le dossier + son contenu
+			if path == "/" && (entry.Name() == "proc" || entry.Name() == "sys" || entry.Name() == "dev" || entry.Name() == "run") {
+				continue
 			}
+
+			wg.Add(1)
+
+			scanSubDir := func(cp string) {
+				defer wg.Done()
+				childNode, _ := scanFast(cp, node, counter, visited, visitedMu, exclusions)
+				if childNode != nil {
+					mu.Lock()
+					node.Children = append(node.Children, childNode)
+					totalSize += childNode.Size
+					totalCount += (1 + childNode.FileCount)
+					mu.Unlock()
+				}
+			}
+
+			select {
+			case semaphore <- struct{}{}:
+				go func(cp string) {
+					defer func() { <-semaphore }()
+					scanSubDir(cp)
+				}(childPath)
+			default:
+				scanSubDir(childPath)
+			}
+
 		} else {
 			atomic.AddInt64(counter, 1)
 
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
 			var size int64
+			// Optimisation hardlinks
 			if stat, ok := info.Sys().(*syscall.Stat_t); ok {
 				size = stat.Blocks * 512
-				id := FileID{Dev: stat.Dev, Ino: stat.Ino}
-				if _, seen := visited[id]; !seen {
-					visited[id] = struct{}{}
-					totalSize += size
+				if stat.Nlink > 1 {
+					id := FileID{Dev: stat.Dev, Ino: stat.Ino}
+					visitedMu.Lock()
+					if _, seen := visited[id]; !seen {
+						visited[id] = struct{}{}
+						localSize += size
+					}
+					visitedMu.Unlock()
+				} else {
+					localSize += size
 				}
 			} else {
 				size = info.Size()
-				totalSize += size
+				localSize += size
 			}
 
 			child := &FileNode{
 				Name:      entry.Name(),
-				Path:      childPath,
 				Size:      size,
 				FileCount: 1,
 				IsDir:     false,
 				Parent:    node,
 			}
-			node.Children = append(node.Children, child)
-			totalCount++
+			localFiles = append(localFiles, child)
+			localCount++
 		}
 	}
+
+	wg.Wait()
+
+	mu.Lock()
+	node.Children = append(node.Children, localFiles...)
+	totalSize += localSize
+	totalCount += localCount
+	mu.Unlock()
 
 	node.Size = totalSize
 	node.FileCount = totalCount
 
-	// Tri par défaut : Taille décroissante
 	sort.Slice(node.Children, func(i, j int) bool {
 		return node.Children[i].Size > node.Children[j].Size
 	})
@@ -127,7 +201,15 @@ func ScanRecursively(path string, parent *FileNode, counter *int64, visited map[
 	return node, nil
 }
 
-// Retourne la taille totale de la partition disque
+func isExcluded(name string, patterns []string) bool {
+	for _, p := range patterns {
+		if matched, _ := filepath.Match(p, name); matched {
+			return true
+		}
+	}
+	return false
+}
+
 func GetPartitionSize(path string) int64 {
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(path, &stat); err != nil {
@@ -136,7 +218,6 @@ func GetPartitionSize(path string) int64 {
 	return int64(stat.Blocks) * int64(stat.Bsize)
 }
 
-// Remplace le tilde (~) par le chemin complet du dossier utilisateur
 func ExpandPath(path string) string {
 	path = os.ExpandEnv(path)
 	if strings.HasPrefix(path, "~") {
@@ -147,7 +228,7 @@ func ExpandPath(path string) string {
 		if path == "~" {
 			return home
 		}
-		if len(path) > 1 && path[1] == '/' {
+		if len(path) > 1 && (path[1] == '/' || path[1] == os.PathSeparator) {
 			return filepath.Join(home, path[2:])
 		}
 	}
