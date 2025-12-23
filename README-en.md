@@ -1,4 +1,4 @@
-# AED
+#AED
 
 ![](./_images/aed.png)
 
@@ -37,7 +37,7 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 > - b: Opens a shell (terminal) directly in the selected folder
 > - g: Opens the folder or file in the OS graphical explorer (xdg-open)
 > - r: Allows you to re-scan the current folder
-> - ctrl+l: Allows you to switch the language between French :fr: and English :gb:
+> - ctrl+l: Allows you to switch the language between French:fr: and English:gb:
 > - s: Sort by size (Ascending/Descending)
 > - n: Sort by name (Ascending/Descending)
 > - C: Sort by number of elements (Ascending/Descending)
@@ -61,11 +61,58 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 └── view.go # View() function and formatting
 ```
 
-## Releases
+## Facility
+
+### Go.dev
+
+You can use AED by downloading it directly from [pkg.go.dev](https://pkg.go.dev/github.com/quirky1869/aed):
+
+`go install github.com/quirky1869/aed/cmd/aed@latest`
+
+You will need to have Go installed on your PC
+
+<details>
+<summary style="font-weight: bold; color: #500aff;">Go installation procedure (Click to expand)</summary>
+
+```bash
+# Delete a possible old version of Go
+sudo rm -rf /usr/local/go
+
+# Unzip the downloaded file to /usr/local
+# (Adapt file path and name if necessary)
+sudo tar -C /usr/local -xzf ~/Downloads/go1.25.3.linux-amd64.tar.gz
+
+# Add Go to PATH and set GOPATH
+# Open your ~/.bashrc or ~/.zshrc file
+micro ~/.zshrc
+
+# Append at end of file
+export PATH=$PATH:/usr/local/go/bin
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+
+# Reload shell configuration
+source ~/.zshrc
+
+# Check the correct installation
+go version
+```
+</details>
+
+> Uninstallation
+> `rm $(go env GOPATH)/bin/aed`
+
+### Releases
 
 The [releases](https://github.com/Quirky1869/aed/releases) are available [here](https://github.com/Quirky1869/aed/releases)
 
 ![](./_images/gif/aed.gif)
+
+### Snap
+
+Via snap store
+
+In progress... 🛠️
 
 ## Colors
 
@@ -74,7 +121,7 @@ You can change the interface colors from the `ui/styles.go` file
 <details>
 <summary style="font-weight: bold; color: #500aff;">ui/styles.go (Click to expand)</summary>
 
-### Directory selection and exclusions
+### File selection and exclusions
 
 <img src="./_images/DSA1.png" alt="DSA1">
 
@@ -90,7 +137,7 @@ You can change the interface colors from the `ui/styles.go` file
 > - 2 = countStyle
 > - 3 = helpDescStyle
 
-### DSA
+### AED
 
 <img src="./_images/DSA3.png" alt="DSA3">
 
