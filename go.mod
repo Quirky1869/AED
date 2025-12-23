@@ -1,4 +1,4 @@
-module github.com/Quirky1869/aed
+module github.com/quirky1869/aed
 
 go 1.25.2
 

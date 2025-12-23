@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/Quirky1869/aed/scanner"
+	"github.com/quirky1869/aed/scanner"
 )
 
 // Messages internes pour la communication asynchrone (fin de scan, refresh)
