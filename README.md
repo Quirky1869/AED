@@ -67,9 +67,17 @@ Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/�
 
 Vous pouvez vous servir d'AED en le téléchargeant directement depuis [pkg.go.dev](https://pkg.go.dev/github.com/quirky1869/aed) :
 
-`go install github.com/quirky1869/aed/cmd/aed@latest`  
+```bash
+go install github.com/quirky1869/aed/cmd/aed@v0.1.5
+aed
+```  
+>[!TIP]  
+>Si besoin ajouter l'emplacement des binaires go à votre `.zshrc` ou `.babshrc`  
+>`echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.zshrc`  
+>`source ~/.zshrc`  
 
-Il vous faudra avoir Go d'installer sur votre PC  
+>[!CAUTION]  
+>Il vous faudra avoir [Go d'installer](https://go.dev/dl/) sur votre PC  
 
 <details>  
 <summary style="font-weight: bold; color: #500aff;">Procédure d'installation Go (Cliquer pour déplier)</summary>  
