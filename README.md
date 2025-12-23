@@ -61,11 +61,58 @@ Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/�
     └── view.go          # Fonction View() et formatage
 ```
 
-## Releases
+## Installation
+
+### Go.dev
+
+Vous pouvez vous servir d'AED en le téléchargeant directement depuis [pkg.go.dev](https://pkg.go.dev/github.com/quirky1869/aed) :
+
+`go install github.com/quirky1869/aed/cmd/aed@latest`  
+
+Il vous faudra avoir Go d'installer sur votre PC  
+
+<details>  
+<summary style="font-weight: bold; color: #500aff;">Procédure d'installation Go (Cliquer pour déplier)</summary>  
+
+```bash
+# Supprimer une éventuelle ancienne version de Go
+sudo rm -rf /usr/local/go  
+
+# Dézipper le fichier téléchargé dans /usr/local
+# (Adaptez le chemin et le nom du fichier si nécessaire)
+sudo tar -C /usr/local -xzf ~/Téléchargements/go1.25.3.linux-amd64.tar.gz  
+
+# Ajouter Go au PATH et définir GOPATH
+# Ouvrir votre fichier ~/.bashrc ou ~/.zshrc
+micro ~/.zshrc  
+
+# Ajouter à la fin du fichier
+export PATH=$PATH:/usr/local/go/bin  
+export GOPATH=$HOME/go  
+export PATH=$PATH:$GOPATH/bin  
+
+# Recharger la configuration du shell
+source ~/.zshrc  
+
+# Vérifier la bonne installation
+go version  
+```
+</details>  
+
+>  Désinstallation  
+>  `rm $(go env GOPATH)/bin/aed`
+
+### Releases  
 
 Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici](https://github.com/Quirky1869/aed/releases)  
 
 ![](./_images/gif/aed.gif)  
+
+### Snap
+
+Via snapstore  
+
+En cours ...  🛠️  
 
 ## Couleurs
 
