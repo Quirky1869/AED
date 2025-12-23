@@ -72,7 +72,7 @@ go install github.com/quirky1869/aed/cmd/aed@v0.1.5
 aed
 ```
 >[!TIP]
->If necessary add the location of the go binaries to your `.zshrc` or `.babshrc`
+>If necessary add the location of the go binaries to your `.zshrc` or `.bashrc`
 >`echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.zshrc`
 >`source ~/.zshrc`
 
