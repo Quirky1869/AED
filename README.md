@@ -65,6 +65,9 @@ Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/�
 
 ### Go.dev
 
+>[!CAUTION]  
+>Il vous faudra avoir [Go d'installer](https://go.dev/dl/) sur votre PC  
+
 Vous pouvez vous servir d'AED en le téléchargeant directement depuis [pkg.go.dev](https://pkg.go.dev/github.com/quirky1869/aed) :
 
 ```bash
@@ -75,9 +78,6 @@ aed
 >Si besoin ajouter l'emplacement des binaires go à votre `.zshrc` ou `.bashrc`  
 >`echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.zshrc`  
 >`source ~/.zshrc`  
-
->[!CAUTION]  
->Il vous faudra avoir [Go d'installer](https://go.dev/dl/) sur votre PC  
 
 <details>  
 <summary style="font-weight: bold; color: #500aff;">Procédure d'installation Go (Cliquer pour déplier)</summary>  
