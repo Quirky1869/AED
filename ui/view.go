@@ -7,7 +7,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"aed/scanner"
+	"github.com/quirky1869/aed/scanner"
 )
 
 // View génère l'affichage de l'interface utilisateur en fonction de l'état actuel
