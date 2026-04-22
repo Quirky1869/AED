@@ -116,12 +116,6 @@ Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici
 
 ![](./_images/gif/aed.gif)  
 
-### Snap
-
-Via snapstore  
-
-En cours ...  🛠️  
-
 ## Couleurs
 
 Vous pouvez changer les couleurs de l'interface à partir du fichier `ui/styles.go`  
