@@ -1,4 +1,4 @@
-# AED
+#AED
 
 ![](./_images/aed.png)
 
@@ -37,7 +37,7 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 > - b: Opens a shell (terminal) directly in the selected folder
 > - g: Opens the folder or file in the OS graphical explorer (xdg-open)
 > - r: Allows you to re-scan the current folder
-> - ctrl+l: Allows you to switch the language between French :fr: and English :gb:
+> - ctrl+l: Allows you to switch the language between French:fr: and English:gb:
 > - s: Sort by size (Ascending/Descending)
 > - n: Sort by name (Ascending/Descending)
 > - C: Sort by number of elements (Ascending/Descending)
@@ -61,7 +61,7 @@ Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and V
 └── view.go # View() function and formatting
 ```
 
-## Installation
+## Facility
 
 ### Go.dev
 
@@ -115,12 +115,6 @@ aed
 The [releases](https://github.com/Quirky1869/aed/releases) are available [here](https://github.com/Quirky1869/aed/releases)
 
 ![](./_images/gif/aed.gif)
-
-### Snap
-
-Via snap store
-
-In progress... 🛠️
 
 ## Colors
 
