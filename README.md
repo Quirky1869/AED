@@ -1,4 +1,4 @@
-# AED
+#AED
 
 ![](./_images/aed.png)  
 
@@ -7,126 +7,125 @@
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=plastic&logo=go)](https://golang.org/)
 [![Latest Version](https://img.shields.io/github/v/release/Quirky1869/aed?color=b100ff)](https://github.com/Quirky1869/aed/releases)
 [![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/release.yml)
-[![GitHub Actions Translate](https://github.com/Quirky1869/aed/actions/workflows/translate-en-readme.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/translate-en-readme.yml)
 
-## English README :gb:
+## French README :fr:
 
-An English version of the README is available [here](README-en.md)  
+An French version the README is available [here](README-fr.md)
 
-## Résumé
+## Summary
 <p align="center">  
 <a href="https://golang.org" target="_blank" rel="noreferrer">  
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" alt="go" width="40" height="70"/>  
+<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" alt="go" width="40" height="70"/>  
 </a>  
-</p>   
+</p>  
 
-AED (Analyseur d'Espace Disque) est un explorateur de disque interactif pour terminal. Il scanne récursivement un dossier donné pour afficher quels fichiers ou sous-dossiers consomment le plus d'espace.  
+AED (Disk Space Analyzer) is an interactive disk explorer for terminal. It recursively scans a given folder to show which files or subfolders are consuming the most space.  
 
-## Fonctionnalités
+## Features
 
-Analyse intelligente : Scan récursif qui trie les éléments par taille, nom ou nombre d'éléments et gère les hardlinks (via inodes).  
+Smart scan: Recursive scan that sorts elements by size, name or number of elements and manages hardlinks (via inodes).  
 
-Visualisation claire : Affiche des barres de progression colorées pour identifier instantanément les éléments volumineux.  
+Clear visualization: Shows colored progress bars to instantly identify large items.  
 
-Navigation ergonomique : Compatible avec les flèches directionnelles (↑/↓/←/→) et les touches Vim (h, j, k, l) pour naviguer dans l'arborescence.  
+Ergonomic navigation: Compatible with directional arrows (↑/↓/←/→) and Vim keys (h, j, k, l) to navigate the tree.  
 
 >[!TIP]  
-> Options :
-> - ? : Afficher l'aide
-> - esc : Revenir au menu principal
-> - b : Ouvre un shell (terminal) directement dans le dossier sélectionné  
-> - g : Ouvre le dossier ou fichier dans l'explorateur graphique de l'OS (xdg-open)  
-> - r : Permet de re-scanner le dossier actuel
-> - ctrl+l : Permet de permuter la langue entre Francais :fr: et Anglais :gb:
-> - s : Trier par taille (Ascendant/Descendant)
-> - n : Trier par nom (Ascendant/Descendant)
-> - C : Trier par nombre d'éléments (Ascendant/Descendant)
-> - e : Afficher ou masquer les fichiers cachés
+> Options:
+> - ? : Show help
+> - esc: Return to main menu
+> - b: Opens a shell (terminal) directly in the selected folder
+> - g: Opens the folder or file in the OS graphical explorer (xdg-open)
+> - r: Allows you to re-scan the current folder
+> - ctrl+l: Allows you to switch the language between French:fr: and English:gb:
+> - s: Sort by size (Ascending/Descending)
+> - n: Sort by name (Ascending/Descending)
+> - C: Sort by number of elements (Ascending/Descending)
+> - e: Show or hide hidden files
 
-## Structure du projet
+## Project structure
 
 ```
 .
 ├── go.mod
 ├── cmd/
-│   └── app/
-│       └── main.go      # Entrée du programme
-├── scanner/
-│   └── scanner.go       # Logique de scan, FileNode, utilitaires
+│ └── app/
+│   └── main.go # Program entry
+├── scan/
+│ └── scanner.go # Scan logic, FileNode, utilities
 └── ui/
-    ├── autocomplete.go  # Fichier d'autocompletion (Tab)
-    ├── lang.go          # Fichier de langues (FR, EN)
-    ├── model.go         # Structure Model, Update() et Init()
-    ├── styles.go        # Styles Lipgloss
-    └── view.go          # Fonction View() et formatage
+├── autocomplete.go # Autocompletion file (Tab)
+├── lang.go # Language file (FR, EN)
+├── model.go # Structure Model, Update() and Init()
+├── styles.go # Lipgloss Styles
+└── view.go # View() function and formatting
 ```
 
-## Installation
+## Facility
 
 ### Go.dev
 
 >[!CAUTION]  
->Il vous faudra avoir [Go d'installer](https://go.dev/dl/) sur votre PC  
+>You will need to have [Go to install](https://go.dev/dl/) on your PC  
 
 <details>  
-<summary style="font-weight: bold; color: #500aff;">Procédure d'installation Go (Cliquer pour déplier)</summary>  
+<summary style="font-weight: bold; color: #500aff;">Go installation procedure (Click to expand)</summary>  
 
 ```bash
-# Supprimer une éventuelle ancienne version de Go
-sudo rm -rf /usr/local/go  
+# Delete a possible old version of Go
+sudo rm -rf /usr/local/go
 
-# Dézipper le fichier téléchargé dans /usr/local
-# (Adaptez le chemin et le nom du fichier si nécessaire)
-sudo tar -C /usr/local -xzf ~/Téléchargements/go1.25.3.linux-amd64.tar.gz  
+# Unzip the downloaded file to /usr/local
+# (Adapt file path and name if necessary)
+sudo tar -C /usr/local -xzf ~/Downloads/go1.25.3.linux-amd64.tar.gz
 
-# Ajouter Go au PATH et définir GOPATH
-# Ouvrir votre fichier ~/.bashrc ou ~/.zshrc
-micro ~/.zshrc  
+# Add Go to PATH and set GOPATH
+# Open your ~/.bashrc or ~/.zshrc file
+micro ~/.zshrc
 
-# Ajouter à la fin du fichier
-export PATH=$PATH:/usr/local/go/bin  
-export GOPATH=$HOME/go  
-export PATH=$PATH:$GOPATH/bin  
+# Append at end of file
+export PATH=$PATH:/usr/local/go/bin
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
 
-# Recharger la configuration du shell
-source ~/.zshrc  
+# Reload shell configuration
+source ~/.zshrc
 
-# Vérifier la bonne installation
-go version  
+# Check the correct installation
+go version
 ```
 </details>  
 
-Vous pouvez vous servir d'AED en le téléchargeant directement depuis [pkg.go.dev](https://pkg.go.dev/github.com/quirky1869/aed) :
+You can use AED by downloading it directly from [pkg.go.dev](https://pkg.go.dev/github.com/quirky1869/aed):
 
 ```bash
 go install github.com/quirky1869/aed/cmd/aed@v0.1.5
 aed
-```  
+```
 >[!TIP]  
->Si besoin ajouter l'emplacement des binaires go à votre `.zshrc` ou `.bashrc`  
+>If necessary add the location of the go binaries to your `.zshrc` or `.bashrc`  
 >`echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.zshrc`  
->`source ~/.zshrc`
+>`source ~/.zshrc`  
 
->  Désinstallation  
->  `rm $(go env GOPATH)/bin/aed`
+> Uninstallation
+> `rm $(go env GOPATH)/bin/aed`
 
-### Releases  
+### Releases
 
-Les [releases](https://github.com/Quirky1869/aed/releases) sont disponibles [ici](https://github.com/Quirky1869/aed/releases)  
+The [releases](https://github.com/Quirky1869/aed/releases) are available [here](https://github.com/Quirky1869/aed/releases)  
 
 ![](./_images/gif/aed.gif)  
 
-## Couleurs
+## Colors
 
-Vous pouvez changer les couleurs de l'interface à partir du fichier `ui/styles.go`  
+You can change the interface colors from the `ui/styles.go` file  
 
 <details>  
-<summary style="font-weight: bold; color: #500aff;">ui/styles.go (Cliquer pour déplier)</summary>  
+<summary style="font-weight: bold; color: #500aff;">ui/styles.go (Click to expand)</summary>  
 
-### Selection du dossier et exclusions
+### File selection and exclusions
 
 <img src="./_images/DSA1.png" alt="DSA1">  
-  
+
 > - 1 = titleStyle
 > - 2 = helpDescStyle
 > - 3 = inactiveStyle
@@ -157,19 +156,19 @@ Vous pouvez changer les couleurs de l'interface à partir du fichier `ui/styles.
 
 </details>  
 
-## Technologies utilisées
+## Technologies used
 
-| Librairie                                                    | Utilisation                          |
+| Bookstore | Use |
 | ------------------------------------------------------------ | ------------------------------------ |
-| [Bubble Tea](https://github.com/charmbracelet/bubbletea)     | Gestion de l’interface TUI           |
-| [Lipgloss](https://github.com/charmbracelet/lipgloss)        | Stylisation du texte et des bordures |
-| ![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) [Golang](https://go.dev)   | Langage principal et logique métier |
+| [Bubble Tea](https://github.com/charmbracelet/bubbletea) | Management of the TUI interface |
+| [Lipgloss](https://github.com/charmbracelet/lipgloss) | Stylizing text and borders |
+| ![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) [Golang](https://go.dev) | Core language and business logic |
 
 
-## Auteur
+## Author
 
-Projet développé par Quirky  
+Project developed by Quirky  
 
 <a href="https://github.com/Quirky1869" target="_blank">  
-  <img src="./_images/white-github.png" alt="GitHub" width="30" height="30" style="vertical-align:middle;"> GitHub  
+<img src="./_images/white-github.png" alt="GitHub" width="30" height="30" style="vertical-align:middle;"> GitHub  
 </a>  
