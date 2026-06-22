@@ -12,6 +12,12 @@
 
 An French version the README is available [here](README-fr.md)
 
+## Quick launch
+
+```bash
+curl -fsSL https://github.com/Quirky1869/aed/releases/latest/download/aed -o /tmp/aed && chmod +x /tmp/aed && /tmp/aed
+```
+
 ## Summary
 <p align="center">  
 <a href="https://golang.org" target="_blank" rel="noreferrer">  

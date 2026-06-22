@@ -9,6 +9,12 @@
 [![GitHub Actions Release](https://github.com/Quirky1869/aed/actions/workflows/release.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/release.yml)
 [![GitHub Actions Translate](https://github.com/Quirky1869/aed/actions/workflows/translate-en-readme.yml/badge.svg)](https://github.com/Quirky1869/aed/actions/workflows/translate-en-readme.yml)
 
+## Lancement rapide
+
+```bash
+curl -fsSL https://github.com/Quirky1869/aed/releases/latest/download/aed -o /tmp/aed && chmod +x /tmp/aed && /tmp/aed
+```
+
 ## Résumé
 <p align="center">  
 <a href="https://golang.org" target="_blank" rel="noreferrer">  
