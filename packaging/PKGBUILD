@@ -1,4 +1,4 @@
-# Maintainer: Quirky1869 <mikec18reggae@gmail.com>
+# Maintainer: Quirky1869 <quirky1869@users.noreply.github.com>
 
 pkgname=aed-bin
 pkgver=0.1.6
@@ -10,7 +10,7 @@ license=('MIT')
 provides=('aed')
 conflicts=('aed')
 source=("aed-${pkgver}::https://github.com/Quirky1869/aed/releases/download/v${pkgver}/aed")
-sha256sums=('d18f4648fea0d366f12834c1eb4cacf0d7f90c78e260fd12115dff38d1e0cf29')
+sha256sums=('8b92e48785e8b8b5e0560540bc9109b90c72ebccf48523d62a6f7b280088fa1f')
 
 package() {
     install -Dm755 "${srcdir}/aed-${pkgver}" "${pkgdir}/usr/bin/aed"
