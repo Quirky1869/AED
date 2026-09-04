@@ -4,11 +4,13 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // Identifiant unique pour dédupliquer les fichiers (hardlinks)
@@ -81,10 +83,20 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 		Parent: parent,
 	}
 
-	entries, err := os.ReadDir(path)
+	// On garde le File (et son fd) ouvert pour pouvoir faire des Fstatat
+	// relatifs au dossier plutôt que des Lstat qui reparcourent tout le
+	// chemin depuis la racine à chaque fichier.
+	dirFile, err := os.Open(path)
 	if err != nil {
 		return node, nil
 	}
+
+	entries, err := dirFile.ReadDir(-1)
+	if err != nil {
+		dirFile.Close()
+		return node, nil
+	}
+	dfd := int(dirFile.Fd())
 
 	// Pré-allocation
 	node.Children = make([]*FileNode, 0, len(entries))
@@ -96,26 +108,29 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 		mu         sync.Mutex
 	)
 
-	var localFiles []*FileNode
+	localFiles := make([]*FileNode, 0, len(entries))
 	var localSize int64
 	var localCount int64
 
 	for _, entry := range entries {
-		// Calcule le chemin complet
-		childPath := filepath.Join(path, entry.Name())
+		entryName := entry.Name()
+		isDir := entry.IsDir()
+
+		// Le chemin complet ne sert que pour les sous-dossiers ou les
+		// exclusions : on évite de l'allouer pour chaque fichier.
+		var childPath string
+		if isDir || len(exclusions) > 0 {
+			childPath = filepath.Join(path, entryName)
+		}
 
 		if len(exclusions) > 0 {
-			if isExcluded(entry.Name(), exclusions) {
-				continue
-			}
-			if isExcluded(childPath, exclusions) {
+			if isExcluded(entryName, exclusions) || isExcluded(childPath, exclusions) {
 				continue
 			}
 		}
 
-
-		if entry.IsDir() {
-			if path == "/" && (entry.Name() == "proc" || entry.Name() == "sys" || entry.Name() == "dev" || entry.Name() == "run") {
+		if isDir {
+			if path == "/" && (entryName == "proc" || entryName == "sys" || entryName == "dev" || entryName == "run") {
 				continue
 			}
 
@@ -146,33 +161,27 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 		} else {
 			atomic.AddInt64(counter, 1)
 
-			info, err := entry.Info()
-			if err != nil {
+			var stat unix.Stat_t
+			if err := unix.Fstatat(dfd, entryName, &stat, unix.AT_SYMLINK_NOFOLLOW); err != nil {
 				continue
 			}
 
-			var size int64
 			// Optimisation hardlinks
-			if stat, ok := info.Sys().(*syscall.Stat_t); ok {
-				size = stat.Blocks * 512
-				if stat.Nlink > 1 {
-					id := FileID{Dev: stat.Dev, Ino: stat.Ino}
-					visitedMu.Lock()
-					if _, seen := visited[id]; !seen {
-						visited[id] = struct{}{}
-						localSize += size
-					}
-					visitedMu.Unlock()
-				} else {
+			size := stat.Blocks * 512
+			if stat.Nlink > 1 {
+				id := FileID{Dev: uint64(stat.Dev), Ino: stat.Ino}
+				visitedMu.Lock()
+				if _, seen := visited[id]; !seen {
+					visited[id] = struct{}{}
 					localSize += size
 				}
+				visitedMu.Unlock()
 			} else {
-				size = info.Size()
 				localSize += size
 			}
 
 			child := &FileNode{
-				Name:      entry.Name(),
+				Name:      entryName,
 				Size:      size,
 				FileCount: 1,
 				IsDir:     false,
@@ -182,6 +191,11 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 			localCount++
 		}
 	}
+
+	// On n'a plus besoin du fd une fois les fichiers de ce dossier statés :
+	// on le libère avant d'attendre les sous-dossiers pour ne pas garder
+	// trop de fd ouverts simultanément lors d'une récursion profonde.
+	dirFile.Close()
 
 	wg.Wait()
 
@@ -194,9 +208,18 @@ func scanFast(path string, parent *FileNode, counter *int64, visited map[FileID]
 	node.Size = totalSize
 	node.FileCount = totalCount
 
-	sort.Slice(node.Children, func(i, j int) bool {
-		return node.Children[i].Size > node.Children[j].Size
-	})
+	if len(node.Children) > 1 {
+		slices.SortFunc(node.Children, func(a, b *FileNode) int {
+			switch {
+			case a.Size > b.Size:
+				return -1
+			case a.Size < b.Size:
+				return 1
+			default:
+				return 0
+			}
+		})
+	}
 
 	return node, nil
 }
